@@ -10,7 +10,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 	private val value: Value<T1, T2>
 ) : IDiscriminatedUnion<T1, T2> {
 	@Suppress("IMPLICIT_CAST_TO_ANY")
-	override val unionValue
+	val unionValue
 		get() = when (value) {
 			is Value1<T1, T2> -> value.value
 			is Value2<T1, T2> -> value.value
@@ -341,7 +341,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 	 * If [isFirstType], return a [Pair] with this union's value in the [Pair]'s first value and null in the second value
 	 * Else, return a [Pair] with null in the first value and this union's value in the [Pair]'s second value
 	 */
-	fun toPair(): Pair<T1?, T2?> {
+	override fun toPair(): Pair<T1?, T2?> {
 		return map({ it to null }) { null to it }
 	}
 
@@ -505,6 +505,70 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 
 		@JvmStatic
+		@JvmName("flattenUnionOfValueAndUnionToTriDiscriminatedUnion")
+		fun <T1, T2, T3> DiscriminatedUnion<T1, DiscriminatedUnion<T2, T3>>.flattenToTriDiscriminatedUnion(): TriDiscriminatedUnion<T1, T2, T3> {
+			return when (value) {
+				is Value1<T1, DiscriminatedUnion<T2, T3>> -> TriDiscriminatedUnion.first(value.value)
+				is Value2<T1, DiscriminatedUnion<T2, T3>> -> when (value.value.value) {
+					is Value1<T2, T3> -> TriDiscriminatedUnion.second(value.value.value.value)
+					is Value2<T2, T3> -> TriDiscriminatedUnion.third(value.value.value.value)
+				}
+			}
+		}
+
+		@JvmStatic
+		@JvmName("flattenUnionOfUnionAndValueToTriDiscriminatedUnion")
+		fun <T1, T2, T3> DiscriminatedUnion<DiscriminatedUnion<T1, T2>, T3>.flattenToTriDiscriminatedUnion(): TriDiscriminatedUnion<T1, T2, T3> {
+			return when (value) {
+				is Value1<DiscriminatedUnion<T1, T2>, T3> -> when (value.value.value) {
+					is Value1<T1, T2> -> TriDiscriminatedUnion.first(value.value.value.value)
+					is Value2<T1, T2> -> TriDiscriminatedUnion.second(value.value.value.value)
+				}
+				is Value2<DiscriminatedUnion<T1, T2>, T3> -> TriDiscriminatedUnion.third(value.value)
+			}
+		}
+
+		@JvmStatic
+		fun <T1, T2, T3, T4> DiscriminatedUnion<DiscriminatedUnion<T1, T2>, DiscriminatedUnion<T3, T4>>.flattenToQuadDiscriminatedUnion(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+			return when (value) {
+				is Value1<DiscriminatedUnion<T1, T2>, DiscriminatedUnion<T3, T4>> -> when (value.value.value) {
+					is Value1<T1, T2> -> QuadDiscriminatedUnion.first(value.value.value.value)
+					is Value2<T1, T2> -> QuadDiscriminatedUnion.second(value.value.value.value)
+				}
+				is Value2<DiscriminatedUnion<T1, T2>, DiscriminatedUnion<T3, T4>> -> when (value.value.value) {
+					is Value1<T3, T4> -> QuadDiscriminatedUnion.third(value.value.value.value)
+					is Value2<T3, T4> -> QuadDiscriminatedUnion.fourth(value.value.value.value)
+				}
+			}
+		}
+
+		@JvmStatic
+		@JvmName("flattenUnionOfValueAndUnionToQuadDiscriminatedUnion")
+		fun <T1, T2, T3, T4> DiscriminatedUnion<T1, TriDiscriminatedUnion<T2, T3, T4>>.flattenToQuadDiscriminatedUnion(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+			return when (value) {
+				is Value1<T1, TriDiscriminatedUnion<T2, T3, T4>> -> QuadDiscriminatedUnion.first(value.value)
+				is Value2<T1, TriDiscriminatedUnion<T2, T3, T4>> -> value.value.map(
+					{ QuadDiscriminatedUnion.second(it) },
+					{ QuadDiscriminatedUnion.third(it) },
+					{ QuadDiscriminatedUnion.fourth(it) },
+				)
+			}
+		}
+
+		@JvmStatic
+		@JvmName("flattenUnionOfUnionAndValueToQuadDiscriminatedUnion")
+		fun <T1, T2, T3, T4> DiscriminatedUnion<TriDiscriminatedUnion<T1, T2, T3>, T4>.flattenToQuadDiscriminatedUnion(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+			return when (value) {
+				is Value1<TriDiscriminatedUnion<T1, T2, T3>, T4> -> value.value.map(
+					{ QuadDiscriminatedUnion.first(it) },
+					{ QuadDiscriminatedUnion.second(it) },
+					{ QuadDiscriminatedUnion.third(it) },
+				)
+				is Value2<TriDiscriminatedUnion<T1, T2, T3>, T4> -> QuadDiscriminatedUnion.fourth(value.value)
+			}
+		}
+
+		@JvmStatic
 		fun <T1, T2> Iterable<DiscriminatedUnion<T1, T2>>.flattenUnions() = map {
 			when (it.value) {
 				is Value1<T1, T2> -> it.value.value
@@ -520,8 +584,9 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			}
 		}
 
-		@JvmStatic
-		inline fun <T1 : Any, T2 : Any, T3> DiscriminatedUnion<T1?, T2?>?.thirdTypeIfAllNull(thirdValue: () -> T3): TriDiscriminatedUnion<T1, T2, T3> {
+		inline fun <T1 : Any, T2 : Any, T3> DiscriminatedUnion<T1?, T2?>?.thirdTypeIfAllNull(
+			thirdValue: () -> T3,
+		): TriDiscriminatedUnion<T1, T2, T3> {
 			return if (allNull) {
 				return TriDiscriminatedUnion.third(thirdValue())
 			} else if (this!!.isFirstType) {
@@ -532,7 +597,9 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 
 		// TODO documentation
+		// TODO QuintDiscriminatedUnion extensions
 		// TODO add JSON support with Jackson JSON and kotlinx.serialization
 		// TODO JSON support serialization modes: serialize as first successful, last successful, and type with most non-null fields
+		// TODO OpenAPI support via springdoc-swaggerui
 	}
 }

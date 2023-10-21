@@ -6,8 +6,6 @@ package com.ogm.kotlin.discriminatedunion
  * @see [DiscriminatedUnion] for the implementation
  */
 interface IDiscriminatedUnion<T1, T2> {
-	val unionValue: Any?
-
 	val firstOrNull: T1?
 
 	val secondOrNull: T2?
@@ -30,4 +28,11 @@ interface IDiscriminatedUnion<T1, T2> {
 	fun orDefaults(
 		defaults: Pair<T1, T2>,
 	): Pair<T1, T2>
+
+	/**
+	 * If [isFirstType], return a [Pair] with this union's value in the [Pair]'s first value and null in the second value
+	 * Else if [isSecondType], return a [Pair] with null in the first value and this union's value in the [Pair]'s second value
+	 * Else, return a [Pair] with null values
+	 */
+	fun toPair(): Pair<T1?, T2?>
 }

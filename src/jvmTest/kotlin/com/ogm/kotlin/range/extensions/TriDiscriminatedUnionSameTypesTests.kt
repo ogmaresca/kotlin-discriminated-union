@@ -433,6 +433,13 @@ class TriDiscriminatedUnionSameTypesTests {
 	}
 
 	@Test
+	fun toPair() {
+		assertThat(union1.toPair()).isEqualTo(Pair("first", null))
+		assertThat(union2.toPair()).isEqualTo(Pair(null, "second"))
+		assertThat(union3.toPair()).isEqualTo(Pair(null, null))
+	}
+
+	@Test
 	fun orDefaultsTest() {
 		assertThat(union1.orDefaults("lorem ipsum", "dolor", "sit amet"))
 			.isEqualTo(Triple("first", "dolor", "sit amet"))
@@ -446,5 +453,18 @@ class TriDiscriminatedUnionSameTypesTests {
 			.isEqualTo(Triple("lorem ipsum", "dolor", "third"))
 		assertThat(union3.orDefaults(Triple("lorem ipsum", "dolor", "sit amet")))
 			.isEqualTo(Triple("lorem ipsum", "dolor", "third"))
+
+		assertThat(union1.orDefaults("lorem ipsum", "dolor"))
+			.isEqualTo(Pair("first", "dolor"))
+		assertThat(union1.orDefaults(Pair("lorem ipsum", "dolor")))
+			.isEqualTo(Pair("first", "dolor"))
+		assertThat(union2.orDefaults("lorem ipsum", "dolor"))
+			.isEqualTo(Pair("lorem ipsum", "second"))
+		assertThat(union2.orDefaults(Pair("lorem ipsum", "dolor")))
+			.isEqualTo(Pair("lorem ipsum", "second"))
+		assertThat(union3.orDefaults("lorem ipsum", "dolor"))
+			.isEqualTo(Pair("lorem ipsum", "dolor"))
+		assertThat(union3.orDefaults(Pair("lorem ipsum", "dolor")))
+			.isEqualTo(Pair("lorem ipsum", "dolor"))
 	}
 }
