@@ -20,7 +20,7 @@ class DiscriminatedUnionSameTypesTest {
 		assertThat(union1.firstOrThrow { "mock error" }).isEqualTo("first")
 		assertThatIllegalStateException().isThrownBy {
 			union1.secondOrThrow()
-		}.withMessage("DiscriminatedUnion is of the first type")
+		}.withMessage("DiscriminatedUnion is type 1")
 		assertThatIllegalStateException().isThrownBy {
 			union1.secondOrThrow { "mock error" }
 		}.withMessage("mock error")
@@ -37,6 +37,7 @@ class DiscriminatedUnionSameTypesTest {
 		assertThat(union1).isEqualTo(DiscriminatedUnion.first<String, String>("first"))
 		assertThat(union1).isNotEqualTo(DiscriminatedUnion.second<String, String>("first"))
 		assertThat(union1).isNotEqualTo(union2)
+		assertThat(union1.position).isEqualTo(1)
 
 		assertThat(union2.firstOrNull).isNull()
 		assertThat(union2.secondOrNull).isEqualTo("second")
@@ -44,7 +45,7 @@ class DiscriminatedUnionSameTypesTest {
 		assertThat(union2.isSecondType).isTrue()
 		assertThatIllegalStateException().isThrownBy {
 			union2.firstOrThrow()
-		}.withMessage("DiscriminatedUnion is of the second type")
+		}.withMessage("DiscriminatedUnion is type 2")
 		assertThatIllegalStateException().isThrownBy {
 			union2.firstOrThrow { "mock error" }
 		}.withMessage("mock error")
@@ -63,6 +64,7 @@ class DiscriminatedUnionSameTypesTest {
 		assertThat(union2).isNotEqualTo(DiscriminatedUnion.first<String, String>("second"))
 		assertThat(union2).isEqualTo(DiscriminatedUnion.second<String, String>("second"))
 		assertThat(union2).isNotEqualTo(union1)
+		assertThat(union2.position).isEqualTo(2)
 	}
 
 	@Test
@@ -70,5 +72,11 @@ class DiscriminatedUnionSameTypesTest {
 		assertThat(union1.reverse()).isEqualTo(DiscriminatedUnion.second<String, String>("first"))
 		assertThat(union1.reverse()).isNotEqualTo(union1)
 		assertThat(union1.reverse()).isNotEqualTo(union2)
+		assertThat(union1.reverse().reverse()).isEqualTo(union1)
+
+		assertThat(union2.reverse()).isEqualTo(DiscriminatedUnion.first<String, String>("second"))
+		assertThat(union2.reverse()).isNotEqualTo(union2)
+		assertThat(union2.reverse()).isNotEqualTo(union1)
+		assertThat(union2.reverse().reverse()).isEqualTo(union2)
 	}
 }

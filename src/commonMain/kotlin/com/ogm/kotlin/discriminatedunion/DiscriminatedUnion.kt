@@ -1,49 +1,60 @@
 package com.ogm.kotlin.discriminatedunion
 
+/**
+ * A discriminated union with 2 possible types
+ * @see <a href="https://en.wikipedia.org/wiki/Tagged_union">Tagged Union</a>
+ * @see [TriDiscriminatedUnion] for a discriminated union with 3 types
+ */
 @JvmInline
 value class DiscriminatedUnion<T1, T2> private constructor(
 	private val value: Value<T1, T2>
-) {
+) : IDiscriminatedUnion<T1, T2> {
 	@Suppress("IMPLICIT_CAST_TO_ANY")
-	val unionValue
+	override val unionValue
 		get() = when (value) {
 			is Value1<T1, T2> -> value.value
 			is Value2<T1, T2> -> value.value
 		}
 
-	val firstOrNull: T1?
+	override val firstOrNull: T1?
 		get() = when (value) {
 			is Value1<T1, T2> -> value.value
 			else -> null
 		}
 
-	val secondOrNull: T2?
+	override val secondOrNull: T2?
 		get() = when (value) {
 			is Value2<T1, T2> -> value.value
 			else -> null
 		}
 
-	val isFirstType: Boolean
+	override val isFirstType: Boolean
 		get() = value is Value1<T1, T2>
 
-	val isSecondType: Boolean
+	override val isSecondType: Boolean
 		get() = value is Value2<T1, T2>
 
-	inline fun firstOrThrow(errorMessage: () -> String = { "DiscriminatedUnion is of the second type" }): T1 {
+	override val position: Int
+		get() = when (value) {
+			is Value1<T1, T2> -> 1
+			is Value2<T1, T2> -> 2
+		}
+
+	inline fun firstOrThrow(errorMessage: () -> String = { "DiscriminatedUnion is type $position" }): T1 {
 		check(isFirstType, errorMessage)
 
 		@Suppress("UNCHECKED_CAST")
 		return firstOrNull as T1
 	}
 
-	inline fun secondOrThrow(errorMessage: () -> String = { "DiscriminatedUnion is of the first type" }): T2 {
+	inline fun secondOrThrow(errorMessage: () -> String = { "DiscriminatedUnion is type $position" }): T2 {
 		check(isSecondType, errorMessage)
 
 		@Suppress("UNCHECKED_CAST")
 		return secondOrNull as T2
 	}
 
-	fun firstOr(defaultValue: T1): T1 {
+	override fun firstOr(defaultValue: T1): T1 {
 		return when (value) {
 			is Value1<T1, T2> -> value.value
 			else -> defaultValue
@@ -59,7 +70,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 	}
 
-	fun secondOr(defaultValue: T2): T2 {
+	override fun secondOr(defaultValue: T2): T2 {
 		return when (value) {
 			is Value2<T1, T2> -> value.value
 			else -> defaultValue
@@ -186,10 +197,10 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 	): DiscriminatedUnion<T1, T2> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			also { (firstOrNull as T1).type1Apply() }
+			apply { (firstOrNull as T1).type1Apply() }
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			also { (secondOrNull as T2).type2Apply() }
+			apply { (secondOrNull as T2).type2Apply() }
 		}
 	}
 
@@ -198,7 +209,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 	): DiscriminatedUnion<T1, T2> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			also { (firstOrNull as T1).block() }
+			apply { (firstOrNull as T1).block() }
 		} else {
 			this
 		}
@@ -211,7 +222,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			this
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			also { (secondOrNull as T2).block() }
+			apply { (secondOrNull as T2).block() }
 		}
 	}
 
@@ -297,7 +308,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 	}
 
-	fun orDefaults(
+	override fun orDefaults(
 		type1Default: T1,
 		type2Default: T2,
 	): Pair<T1, T2> {
@@ -310,7 +321,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 	}
 
-	fun orDefaults(
+	override fun orDefaults(
 		defaults: Pair<T1, T2>,
 	): Pair<T1, T2> {
 		return if (isFirstType) {
@@ -388,6 +399,9 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 	}
 
+	/**
+	 * Return a [DiscriminatedUnion] with the types reversed
+	 */
 	fun reverse(): DiscriminatedUnion<T2, T1> {
 		return when (value) {
 			is Value1<T1, T2> -> second(value.value)
@@ -410,6 +424,16 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 	}
 
 	companion object {
+		val <T> DiscriminatedUnion<T, T>.value
+			@JvmStatic get() = when (value) {
+				is Value1<T, T> -> value.value
+				is Value2<T, T> -> value.value
+			}
+
+		@JvmStatic
+		val <T1 : Any, T2 : Any> DiscriminatedUnion<T1?, T2?>?.allNull: Boolean
+			get() = takeUnless { it?.unionValue == null } == null
+
 		@JvmStatic
 		fun <T1, T2> first(value: T1): DiscriminatedUnion<T1, T2> {
 			return DiscriminatedUnion(Value1(value))
@@ -429,7 +453,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 
 		@JvmStatic
-		fun <T1 : Any, T2 : Any> DiscriminatedUnion<T1?, T2?>?.takeUnlessAnyNull(): DiscriminatedUnion<T1, T2>? {
+		fun <T1 : Any, T2 : Any> DiscriminatedUnion<T1?, T2?>?.takeUnlessAllNull(): DiscriminatedUnion<T1, T2>? {
 			@Suppress("UNCHECKED_CAST")
 			return takeUnless { it?.unionValue == null } as DiscriminatedUnion<T1, T2>?
 		}
@@ -488,16 +512,19 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			}
 		}
 
-		// TODO TriDiscriminatedUnion functions
-		// TODO QuadDiscriminatedUnion functions
-		// TODO QuintDiscriminatedUnion functions
+		@JvmStatic
+		inline fun <T1 : Any, T2 : Any, T3> DiscriminatedUnion<T1?, T2?>?.thirdTypeIfAllNull(thirdValue: () -> T3): TriDiscriminatedUnion<T1, T2, T3> {
+			return if (allNull) {
+				return TriDiscriminatedUnion.third(thirdValue())
+			} else if (this!!.isFirstType) {
+				TriDiscriminatedUnion.first(firstOrNull!!)
+			} else {
+				TriDiscriminatedUnion.second(secondOrNull!!)
+			}
+		}
+
+		// TODO documentation
 		// TODO add JSON support with Jackson JSON and kotlinx.serialization
 		// TODO JSON support serialization modes: serialize as first successful, last successful, and type with most non-null fields
-
-		val <T> DiscriminatedUnion<T, T>.value
-			@JvmStatic get() = when (value) {
-				is Value1<T, T> -> value.value
-				is Value2<T, T> -> value.value
-			}
 	}
 }
