@@ -213,14 +213,15 @@ class DiscriminatedUnionSameTypesTests {
 
 	@Test
 	fun reverseTest() {
-		assertThat(union1.reverse()).isEqualTo(DiscriminatedUnion.second<String, String>("first"))
-		assertThat(union1.reverse()).isNotEqualTo(union1)
-		assertThat(union1.reverse()).isNotEqualTo(union2)
+		assertThat(union1.reverse())
+			.isEqualTo(DiscriminatedUnion.second<String, String>("first"))
+			.isNotEqualTo(union1)
+			.isNotEqualTo(union2)
 		assertThat(union1.reverse().reverse()).isEqualTo(union1)
 
-		assertThat(union2.reverse()).isEqualTo(DiscriminatedUnion.first<String, String>("second"))
-		assertThat(union2.reverse()).isNotEqualTo(union2)
-		assertThat(union2.reverse()).isNotEqualTo(union1)
+		assertThat(union2.reverse())
+			.isEqualTo(DiscriminatedUnion.first<String, String>("second"))
+			.isNotEqualTo(union1)
 		assertThat(union2.reverse().reverse()).isEqualTo(union2)
 	}
 }

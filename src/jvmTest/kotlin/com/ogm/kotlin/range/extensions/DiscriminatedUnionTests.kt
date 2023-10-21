@@ -1,6 +1,7 @@
 package com.ogm.kotlin.range.extensions
 
 import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.toResult
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalStateException
 import org.junit.jupiter.api.Test
@@ -210,15 +211,36 @@ class DiscriminatedUnionTests {
 
 	@Test
 	fun reverseTest() {
-		assertThat(union1.reverse()).isEqualTo(DiscriminatedUnion.second<Int, String>("first"))
-		assertThat(union1.reverse()).isNotEqualTo(union1)
-		assertThat(union1.reverse()).isNotEqualTo(union2)
+		assertThat(union1.reverse())
+			.isEqualTo(DiscriminatedUnion.second<Int, String>("first"))
+			.isNotEqualTo(union1)
+			.isNotEqualTo(union2)
 		assertThat(union1.reverse().reverse()).isEqualTo(union1)
 
-		assertThat(union2.reverse()).isEqualTo(DiscriminatedUnion.first<Int, String>(2))
-		assertThat(union2.reverse()).isNotEqualTo(union2)
-		assertThat(union2.reverse()).isNotEqualTo(union1)
+		assertThat(union2.reverse())
+			.isEqualTo(DiscriminatedUnion.first<Int, String>(2))
+			.isNotEqualTo(union2)
+			.isNotEqualTo(union1)
 		assertThat(union2.reverse().reverse()).isEqualTo(union2)
+	}
+
+	@Test
+	fun toResultTest() {
+		assertThat(DiscriminatedUnion.first<String, IllegalStateException>("lorem ipsum").toResult())
+			.isEqualTo(Result.success("lorem ipsum"))
+			.satisfies {
+				assertThat(it.isSuccess).isTrue()
+				assertThat(it.isFailure).isFalse()
+				assertThat(it.getOrNull()).isEqualTo("lorem ipsum")
+				assertThat(it.exceptionOrNull()).isNull()
+			}
+
+		assertThat(DiscriminatedUnion.second<String, IllegalStateException>(IllegalStateException("Mock error")).toResult()).satisfies {
+			assertThat(it.isSuccess).isFalse()
+			assertThat(it.isFailure).isTrue()
+			assertThat(it.getOrNull()).isNull()
+			assertThat(it.exceptionOrNull()).isExactlyInstanceOf(IllegalStateException::class.java).hasMessage("Mock error")
+		}
 	}
 
 	private companion object {

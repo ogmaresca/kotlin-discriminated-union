@@ -51,21 +51,21 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 			is Value3<T1, T2, T3> -> 3
 		}
 
-	inline fun firstOrThrow(errorMessage: () -> String = { "DiscriminatedUnion is type $position" }): T1 {
+	inline fun firstOrThrow(errorMessage: () -> String = { "TriDiscriminatedUnion is type $position" }): T1 {
 		check(isFirstType, errorMessage)
 
 		@Suppress("UNCHECKED_CAST")
 		return firstOrNull as T1
 	}
 
-	inline fun secondOrThrow(errorMessage: () -> String = { "DiscriminatedUnion is type $position" }): T2 {
+	inline fun secondOrThrow(errorMessage: () -> String = { "TriDiscriminatedUnion is type $position" }): T2 {
 		check(isSecondType, errorMessage)
 
 		@Suppress("UNCHECKED_CAST")
 		return secondOrNull as T2
 	}
 
-	inline fun thirdOrThrow(errorMessage: () -> String = { "DiscriminatedUnion is type $position" }): T3 {
+	inline fun thirdOrThrow(errorMessage: () -> String = { "TriDiscriminatedUnion is type $position" }): T3 {
 		check(isThirdType, errorMessage)
 
 		@Suppress("UNCHECKED_CAST")
@@ -796,17 +796,6 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 			is Value1<T1, T2, T3> -> first(value.value)
 			is Value2<T1, T2, T3> -> third(value.value)
 			is Value3<T1, T2, T3> -> second(value.value)
-		}
-	}
-
-	/**
-	 * Return a [TriDiscriminatedUnion] with the first and third types reversed
-	 */
-	fun reverseEnds(): TriDiscriminatedUnion<T3, T2, T1> {
-		return when (value) {
-			is Value1<T1, T2, T3> -> third(value.value)
-			is Value2<T1, T2, T3> -> second(value.value)
-			is Value3<T1, T2, T3> -> first(value.value)
 		}
 	}
 
