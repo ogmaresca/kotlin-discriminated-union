@@ -1,6 +1,7 @@
 package com.ogm.kotlin.range.extensions
 
 import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.value
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalStateException
 import org.junit.jupiter.api.Test
@@ -27,6 +28,15 @@ class DiscriminatedUnionSameTypesTest {
 		assertThat(union1.firstOrGet { "default" }).isEqualTo("first")
 		assertThat(union1.secondOr("default")).isEqualTo("default")
 		assertThat(union1.secondOrGet { "default" }).isEqualTo("default")
+		assertThat(union1.toString()).isEqualTo("first")
+		assertThat(union1.hashCode()).isEqualTo("first".hashCode())
+		assertThat(union1.value).isEqualTo("first")
+		@Suppress("AssertBetweenInconvertibleTypes")
+		assertThat(union1).isNotEqualTo("first")
+		assertThat(union1).isEqualTo(union1)
+		assertThat(union1).isEqualTo(DiscriminatedUnion.first<String, String>("first"))
+		assertThat(union1).isNotEqualTo(DiscriminatedUnion.second<String, String>("first"))
+		assertThat(union1).isNotEqualTo(union2)
 
 		assertThat(union2.firstOrNull).isNull()
 		assertThat(union2.secondOrNull).isEqualTo("second")
@@ -44,5 +54,21 @@ class DiscriminatedUnionSameTypesTest {
 		assertThat(union2.firstOrGet { "default" }).isEqualTo("default")
 		assertThat(union2.secondOr("default")).isEqualTo("second")
 		assertThat(union2.secondOrGet { "default" }).isEqualTo("second")
+		assertThat(union2.toString()).isEqualTo("second")
+		assertThat(union2.hashCode()).isEqualTo("second".hashCode())
+		assertThat(union2.value).isEqualTo("second")
+		@Suppress("AssertBetweenInconvertibleTypes")
+		assertThat(union2).isNotEqualTo("second")
+		assertThat(union2).isEqualTo(union2)
+		assertThat(union2).isNotEqualTo(DiscriminatedUnion.first<String, String>("second"))
+		assertThat(union2).isEqualTo(DiscriminatedUnion.second<String, String>("second"))
+		assertThat(union2).isNotEqualTo(union1)
+	}
+
+	@Test
+	fun reverseTest() {
+		assertThat(union1.reverse()).isEqualTo(DiscriminatedUnion.second<String, String>("first"))
+		assertThat(union1.reverse()).isNotEqualTo(union1)
+		assertThat(union1.reverse()).isNotEqualTo(union2)
 	}
 }

@@ -4,7 +4,8 @@ package com.ogm.kotlin.discriminatedunion
 value class DiscriminatedUnion<T1, T2> private constructor(
 	private val value: Value<T1, T2>
 ) {
-	val unionValue: Any?
+	@Suppress("IMPLICIT_CAST_TO_ANY")
+	val unionValue
 		get() = when (value) {
 			is Value1<T1, T2> -> value.value
 			is Value2<T1, T2> -> value.value
@@ -94,7 +95,6 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			@Suppress("UNCHECKED_CAST")
 			takeIf { predicate(firstOrNull as T1) }
 		} else {
-			@Suppress("UNCHECKED_CAST")
 			this
 		}
 	}
@@ -130,7 +130,6 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			@Suppress("UNCHECKED_CAST")
 			takeUnless { predicate(firstOrNull as T1) }
 		} else {
-			@Suppress("UNCHECKED_CAST")
 			this
 		}
 	}
@@ -184,7 +183,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 	inline fun apply(
 		type1Apply: T1.() -> Unit,
 		type2Apply: T2.() -> Unit,
-	): DiscriminatedUnion<T1, T2>? {
+	): DiscriminatedUnion<T1, T2> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
 			also { (firstOrNull as T1).type1Apply() }
@@ -196,7 +195,7 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 
 	inline fun applyFirst(
 		block: T1.() -> Unit,
-	): DiscriminatedUnion<T1, T2>? {
+	): DiscriminatedUnion<T1, T2> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
 			also { (firstOrNull as T1).block() }
@@ -323,6 +322,79 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 	}
 
+	/**
+	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
+	 * Else, execute [type2Predicate] on the value of the second type and return the result.
+	 */
+	inline fun anyOf(
+		type1Predicate: (T1) -> Boolean,
+		type2Predicate: (T2) -> Boolean,
+	): Boolean {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			type1Predicate(firstOrNull as T1)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			type2Predicate(secondOrNull as T2)
+		}
+	}
+
+	/**
+	 * If [isFirstType] is true, return [type1Predicate].
+	 * Else, execute [type2Predicate] on the value of the second type and return the result.
+	 */
+	inline fun anyOf(
+		type1Predicate: Boolean,
+		type2Predicate: (T2) -> Boolean,
+	): Boolean {
+		return if (isFirstType) {
+			type1Predicate
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			type2Predicate(secondOrNull as T2)
+		}
+	}
+
+	/**
+	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
+	 * Else, return [type2Predicate].
+	 */
+	inline fun anyOf(
+		type1Predicate: (T1) -> Boolean,
+		type2Predicate: Boolean,
+	): Boolean {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			type1Predicate(firstOrNull as T1)
+		} else {
+			type2Predicate
+		}
+	}
+
+	/**
+	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return true if [type1Predicate] returns false.
+	 * Else, execute [type2Predicate] on the value of the second type and return true if [type2Predicate] returns false.
+	 */
+	inline fun noneOf(
+		type1Predicate: (T1) -> Boolean,
+		type2Predicate: (T2) -> Boolean,
+	): Boolean {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			!type1Predicate(firstOrNull as T1)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			!type2Predicate(secondOrNull as T2)
+		}
+	}
+
+	fun reverse(): DiscriminatedUnion<T2, T1> {
+		return when (value) {
+			is Value1<T1, T2> -> second(value.value)
+			is Value2<T1, T2> -> first(value.value)
+		}
+	}
+
 	override fun toString() = value.toString()
 
 	private sealed interface Value<T1, T2>
@@ -355,5 +427,77 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		fun <T1, T2> DiscriminatedUnion<T1, T2>.toPair(): Pair<T1?, T2?> {
 			return map({ it to null }) { null to it }
 		}
+
+		@JvmStatic
+		fun <T1 : Any, T2 : Any> DiscriminatedUnion<T1?, T2?>?.takeUnlessAnyNull(): DiscriminatedUnion<T1, T2>? {
+			@Suppress("UNCHECKED_CAST")
+			return takeUnless { it?.unionValue == null } as DiscriminatedUnion<T1, T2>?
+		}
+
+		@JvmStatic
+		fun <T1, T2> DiscriminatedUnion<T1, T2>?.orNullableTypes(): DiscriminatedUnion<T1?, T2?> {
+			return if (this == null) {
+				first(null)
+			} else {
+				@Suppress("UNCHECKED_CAST")
+				this as DiscriminatedUnion<T1?, T2?>
+			}
+		}
+
+		@JvmStatic
+		fun <T1, T2> DiscriminatedUnion<DiscriminatedUnion<T1, T2>, DiscriminatedUnion<T1, T2>>.flatten(): DiscriminatedUnion<T1, T2> {
+			return when (value) {
+				is Value1<DiscriminatedUnion<T1, T2>, DiscriminatedUnion<T1, T2>> -> value.value
+				is Value2<DiscriminatedUnion<T1, T2>, DiscriminatedUnion<T1, T2>> -> value.value
+			}
+		}
+
+		@JvmStatic
+		@JvmName("flattenFirst")
+		fun <T1, T2> DiscriminatedUnion<DiscriminatedUnion<T1, T2>, T2>.flatten(): DiscriminatedUnion<T1, T2> {
+			@Suppress("UNCHECKED_CAST")
+			return when (value) {
+				is Value1<DiscriminatedUnion<T1, T2>, T2> -> value.value
+				is Value2<DiscriminatedUnion<T1, T2>, T2> -> this as DiscriminatedUnion<T1, T2>
+			}
+		}
+
+		@JvmStatic
+		@JvmName("flattenSecond")
+		fun <T1, T2> DiscriminatedUnion<T1, DiscriminatedUnion<T1, T2>>.flatten(): DiscriminatedUnion<T1, T2> {
+			@Suppress("UNCHECKED_CAST")
+			return when (value) {
+				is Value1<T1, DiscriminatedUnion<T1, T2>> -> this as DiscriminatedUnion<T1, T2>
+				is Value2<T1, DiscriminatedUnion<T1, T2>> -> value.value
+			}
+		}
+
+		@JvmStatic
+		fun <T1, T2> Iterable<DiscriminatedUnion<T1, T2>>.flattenUnions() = map {
+			when (it.value) {
+				is Value1<T1, T2> -> it.value.value
+				is Value2<T1, T2> -> it.value.value
+			}
+		}
+
+		@JvmStatic
+		fun <T1, T2> Sequence<DiscriminatedUnion<T1, T2>>.flattenUnions() = map {
+			when (it.value) {
+				is Value1<T1, T2> -> it.value.value
+				is Value2<T1, T2> -> it.value.value
+			}
+		}
+
+		// TODO TriDiscriminatedUnion functions
+		// TODO QuadDiscriminatedUnion functions
+		// TODO QuintDiscriminatedUnion functions
+		// TODO add JSON support with Jackson JSON and kotlinx.serialization
+		// TODO JSON support serialization modes: serialize as first successful, last successful, and type with most non-null fields
+
+		val <T> DiscriminatedUnion<T, T>.value
+			@JvmStatic get() = when (value) {
+				is Value1<T, T> -> value.value
+				is Value2<T, T> -> value.value
+			}
 	}
 }
