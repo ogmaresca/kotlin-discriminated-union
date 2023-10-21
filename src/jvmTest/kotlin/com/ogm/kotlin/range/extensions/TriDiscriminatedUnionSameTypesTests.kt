@@ -1,5 +1,6 @@
 package com.ogm.kotlin.range.extensions
 
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.value
 import org.assertj.core.api.Assertions.assertThat
@@ -280,16 +281,34 @@ class TriDiscriminatedUnionSameTypesTests {
 		assertThat(union1.mapToFirst({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("first")
 		assertThat(union1.mapToSecond({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("firstfirst")
 		assertThat(union1.mapToThird({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("firstfirst")
+		assertThat(union1.mapFirstToSecond { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("firstfirst"))
+		assertThat(union1.mapFirstToThird { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("firstfirst"))
+		assertThat(union1.mapSecondToFirst { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("first"))
+		assertThat(union1.mapSecondToThird { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("first"))
+		assertThat(union1.mapThirdToFirst { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("first"))
+		assertThat(union1.mapThirdToSecond { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("first"))
 
 		assertThat(union2.map({ it.repeat(2) }, { it.repeat(3) }, { it.repeat(4) })).isEqualTo("secondsecondsecond")
 		assertThat(union2.mapToFirst({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("secondsecond")
 		assertThat(union2.mapToSecond({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("second")
 		assertThat(union2.mapToThird({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("secondsecondsecond")
+		assertThat(union2.mapFirstToSecond { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("second"))
+		assertThat(union2.mapFirstToThird { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("second"))
+		assertThat(union2.mapSecondToFirst { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("secondsecond"))
+		assertThat(union2.mapSecondToThird { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("secondsecond"))
+		assertThat(union2.mapThirdToFirst { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("second"))
+		assertThat(union2.mapThirdToSecond { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("second"))
 
 		assertThat(union3.map({ it.repeat(2) }, { it.repeat(3) }, { it.repeat(4) })).isEqualTo("thirdthirdthirdthird")
 		assertThat(union3.mapToFirst({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("thirdthirdthird")
 		assertThat(union3.mapToSecond({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("thirdthirdthird")
 		assertThat(union3.mapToThird({ it.repeat(2) }, { it.repeat(3) })).isEqualTo("third")
+		assertThat(union3.mapFirstToSecond { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("third"))
+		assertThat(union3.mapFirstToThird { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("third"))
+		assertThat(union3.mapSecondToFirst { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("third"))
+		assertThat(union3.mapSecondToThird { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("third"))
+		assertThat(union3.mapThirdToFirst { it.repeat(2) }).isEqualTo(DiscriminatedUnion.first<String, String>("thirdthird"))
+		assertThat(union3.mapThirdToSecond { it.repeat(2) }).isEqualTo(DiscriminatedUnion.second<String, String>("thirdthird"))
 	}
 
 	@Test
@@ -404,5 +423,28 @@ class TriDiscriminatedUnionSameTypesTests {
 			.isNotEqualTo(union2)
 			.isNotEqualTo(union3)
 		assertThat(union3.reverseLastTwo().reverseLastTwo()).isEqualTo(union3)
+	}
+
+	@Test
+	fun toTripleTest() {
+		assertThat(union1.toTriple()).isEqualTo(Triple("first", null, null))
+		assertThat(union2.toTriple()).isEqualTo(Triple(null, "second", null))
+		assertThat(union3.toTriple()).isEqualTo(Triple(null, null, "third"))
+	}
+
+	@Test
+	fun orDefaultsTest() {
+		assertThat(union1.orDefaults("lorem ipsum", "dolor", "sit amet"))
+			.isEqualTo(Triple("first", "dolor", "sit amet"))
+		assertThat(union1.orDefaults(Triple("lorem ipsum", "dolor", "sit amet")))
+			.isEqualTo(Triple("first", "dolor", "sit amet"))
+		assertThat(union2.orDefaults("lorem ipsum", "dolor", "sit amet"))
+			.isEqualTo(Triple("lorem ipsum", "second", "sit amet"))
+		assertThat(union2.orDefaults(Triple("lorem ipsum", "dolor", "sit amet")))
+			.isEqualTo(Triple("lorem ipsum", "second", "sit amet"))
+		assertThat(union3.orDefaults("lorem ipsum", "dolor", "sit amet"))
+			.isEqualTo(Triple("lorem ipsum", "dolor", "third"))
+		assertThat(union3.orDefaults(Triple("lorem ipsum", "dolor", "sit amet")))
+			.isEqualTo(Triple("lorem ipsum", "dolor", "third"))
 	}
 }

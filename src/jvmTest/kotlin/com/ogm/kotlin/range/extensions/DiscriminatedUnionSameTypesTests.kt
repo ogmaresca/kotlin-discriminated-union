@@ -224,4 +224,18 @@ class DiscriminatedUnionSameTypesTests {
 			.isNotEqualTo(union1)
 		assertThat(union2.reverse().reverse()).isEqualTo(union2)
 	}
+
+	@Test
+	fun toPairTest() {
+		assertThat(union1.toPair()).isEqualTo("first" to null)
+		assertThat(union2.toPair()).isEqualTo(null to "second")
+	}
+
+	@Test
+	fun orDefaultsTest() {
+		assertThat(union1.orDefaults("lorem ipsum", "dolor sit amet")).isEqualTo("first" to "dolor sit amet")
+		assertThat(union1.orDefaults("lorem ipsum" to "dolor sit amet")).isEqualTo("first" to "dolor sit amet")
+		assertThat(union2.orDefaults("lorem ipsum", "dolor sit amet")).isEqualTo("lorem ipsum" to "second")
+		assertThat(union2.orDefaults("lorem ipsum" to "dolor sit amet")).isEqualTo("lorem ipsum" to "second")
+	}
 }

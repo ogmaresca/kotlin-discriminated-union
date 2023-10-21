@@ -226,6 +226,10 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 	}
 
+	/**
+	 * If [isFirstType], execute [type1Block] on the value and return the result.
+	 * Else, execute [type2Block] on the value and return the result.
+	 */
 	inline fun <R> map(
 		type1Block: (T1) -> R,
 		type2Block: (T2) -> R,
@@ -331,6 +335,14 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			@Suppress("UNCHECKED_CAST")
 			defaults.copy(second = (secondOrNull as T2))
 		}
+	}
+
+	/**
+	 * If [isFirstType], return a [Pair] with this union's value in the [Pair]'s first value and null in the second value
+	 * Else, return a [Pair] with null in the first value and this union's value in the [Pair]'s second value
+	 */
+	fun toPair(): Pair<T1?, T2?> {
+		return map({ it to null }) { null to it }
 	}
 
 	/**
@@ -446,10 +458,6 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 
 		fun <T> DiscriminatedUnion<T, out Throwable>.toResult(): Result<T> {
 			return map({ Result.success(it) }) { Result.failure(it) }
-		}
-
-		fun <T1, T2> DiscriminatedUnion<T1, T2>.toPair(): Pair<T1?, T2?> {
-			return map({ it to null }) { null to it }
 		}
 
 		@JvmStatic

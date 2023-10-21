@@ -1,7 +1,14 @@
 package com.ogm.kotlin.range.extensions
 
 import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.flatten
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.flattenUnions
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.orNullableTypes
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.takeUnlessAllNull
+import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.thirdTypeIfAllNull
 import com.ogm.kotlin.discriminatedunion.DiscriminatedUnion.Companion.toResult
+import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion
+import java.time.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalStateException
 import org.junit.jupiter.api.Test
@@ -225,6 +232,20 @@ class DiscriminatedUnionTests {
 	}
 
 	@Test
+	fun toPairTest() {
+		assertThat(union1.toPair()).isEqualTo("first" to null)
+		assertThat(union2.toPair()).isEqualTo(null to 2)
+	}
+
+	@Test
+	fun orDefaultsTest() {
+		assertThat(union1.orDefaults("lorem ipsum", 1337)).isEqualTo("first" to 1337)
+		assertThat(union1.orDefaults("lorem ipsum" to 1337)).isEqualTo("first" to 1337)
+		assertThat(union2.orDefaults("lorem ipsum", 1337)).isEqualTo("lorem ipsum" to 2)
+		assertThat(union2.orDefaults("lorem ipsum" to 1337)).isEqualTo("lorem ipsum" to 2)
+	}
+
+	@Test
 	fun toResultTest() {
 		assertThat(DiscriminatedUnion.first<String, IllegalStateException>("lorem ipsum").toResult())
 			.isEqualTo(Result.success("lorem ipsum"))
@@ -241,6 +262,76 @@ class DiscriminatedUnionTests {
 			assertThat(it.getOrNull()).isNull()
 			assertThat(it.exceptionOrNull()).isExactlyInstanceOf(IllegalStateException::class.java).hasMessage("Mock error")
 		}
+	}
+
+	@Test
+	fun takeUnlessAllNullTest() {
+		assertThat(DiscriminatedUnion.first<String?, Int?>(null).takeUnlessAllNull()).isNull()
+		assertThat(DiscriminatedUnion.first<String?, Int?>("lorem ipsum").takeUnlessAllNull())
+			.isEqualTo(DiscriminatedUnion.first<String, Int>("lorem ipsum"))
+
+		assertThat(DiscriminatedUnion.second<String?, Int?>(null).takeUnlessAllNull()).isNull()
+		assertThat(DiscriminatedUnion.second<String?, Int?>(1337).takeUnlessAllNull())
+			.isEqualTo(DiscriminatedUnion.second<String, Int>(1337))
+	}
+
+	@Test
+	fun orNullableTypesTest() {
+		assertThat(DiscriminatedUnion.first<String, Int>("lorem ipsum").orNullableTypes())
+			.isEqualTo(DiscriminatedUnion.first<String?, Int?>("lorem ipsum"))
+		assertThat(DiscriminatedUnion.second<String, Int>(1337).orNullableTypes())
+			.isEqualTo(DiscriminatedUnion.second<String?, Int?>(1337))
+		assertThat((null as DiscriminatedUnion<String, Int>?).orNullableTypes())
+			.isEqualTo(DiscriminatedUnion.first<String?, Int?>(null))
+	}
+
+	@Test
+	fun flattenTest() {
+		assertThat(DiscriminatedUnion.first<DiscriminatedUnion<String, Int>, DiscriminatedUnion<String, Int>>(union1).flatten())
+			.isEqualTo(union1)
+		assertThat(DiscriminatedUnion.first<DiscriminatedUnion<String, Int>, DiscriminatedUnion<String, Int>>(union2).flatten())
+			.isEqualTo(union2)
+		assertThat(DiscriminatedUnion.second<DiscriminatedUnion<String, Int>, DiscriminatedUnion<String, Int>>(union1).flatten())
+			.isEqualTo(union1)
+		assertThat(DiscriminatedUnion.second<DiscriminatedUnion<String, Int>, DiscriminatedUnion<String, Int>>(union2).flatten())
+			.isEqualTo(union2)
+
+		assertThat(DiscriminatedUnion.first<DiscriminatedUnion<String, Int>, Int>(union1).flatten())
+			.isEqualTo(union1)
+		assertThat(DiscriminatedUnion.first<DiscriminatedUnion<String, Int>, Int>(union2).flatten())
+			.isEqualTo(union2)
+		assertThat(DiscriminatedUnion.second<DiscriminatedUnion<String, Int>, Int>(1337).flatten())
+			.isEqualTo(DiscriminatedUnion.second<String, Int>(1337))
+
+		assertThat(DiscriminatedUnion.first<String, DiscriminatedUnion<String, Int>>("lorem ipsum").flatten())
+			.isEqualTo(DiscriminatedUnion.first<String, Int>("lorem ipsum"))
+		assertThat(DiscriminatedUnion.second<String, DiscriminatedUnion<String, Int>>(union1).flatten())
+			.isEqualTo(union1)
+		assertThat(DiscriminatedUnion.second<String, DiscriminatedUnion<String, Int>>(union2).flatten())
+			.isEqualTo(union2)
+	}
+
+	@Test
+	fun flattenUnionsTest() {
+		assertThat(listOf(union1, union2, DiscriminatedUnion.first("lorem ipsum"), DiscriminatedUnion.second(1337)).flattenUnions())
+			.isEqualTo(listOf("first", 2, "lorem ipsum", 1337))
+
+		assertThat(sequenceOf(union1, union2, DiscriminatedUnion.first("lorem ipsum"), DiscriminatedUnion.second(1337)).flattenUnions().toList())
+			.isEqualTo(listOf("first", 2, "lorem ipsum", 1337))
+	}
+
+	@Test
+	fun thirdTypeIfAllNullTest() {
+		val today = LocalDate.now()
+
+		assertThat(DiscriminatedUnion.first<String?, Int?>("lorem ipsum").thirdTypeIfAllNull { today })
+			.isEqualTo(TriDiscriminatedUnion.first<String?, Int?, LocalDate?>("lorem ipsum"))
+		assertThat(DiscriminatedUnion.first<String?, Int?>(null).thirdTypeIfAllNull { today })
+			.isEqualTo(TriDiscriminatedUnion.third<String?, Int?, LocalDate?>(today))
+		assertThat(DiscriminatedUnion.second<String?, Int?>(1337).thirdTypeIfAllNull { today })
+			.isEqualTo(TriDiscriminatedUnion.second<String?, Int?, LocalDate?>(1337))
+		assertThat(DiscriminatedUnion.second<String?, Int?>(null).thirdTypeIfAllNull { today })
+			.isEqualTo(TriDiscriminatedUnion.third<String?, Int?, LocalDate?>(today))
 	}
 
 	private companion object {

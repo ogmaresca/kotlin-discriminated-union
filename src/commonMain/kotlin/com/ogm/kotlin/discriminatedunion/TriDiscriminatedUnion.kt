@@ -320,6 +320,11 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 		}
 	}
 
+	/**
+	 * If [isFirstType], execute [type1Block] on the value and return the result.
+	 * Else if [isSecondType], execute [type2Block] on the value and return the result.
+	 * Else, execute [type3Block] on the value and return the result.
+	 */
 	inline fun <R> map(
 		type1Block: (T1) -> R,
 		type2Block: (T2) -> R,
@@ -600,6 +605,15 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 	}
 
 	/**
+	 * If [isFirstType], return a [Triple] with this union's value in the [Triple]'s first value and null in the second and third values
+	 * Else if [isSecondType], return a [Triple] with this union's value in the [Triple]'s second value and null in the first and third values
+	 * Else, return a [Triple] with null in the first and second values and this union's value in the [Triple]'s third value
+	 */
+	fun toTriple(): Triple<T1?, T2?, T3?> {
+		return map({ Triple(it, null, null) }, { Triple(null, it, null) }, { Triple(null, null, it) })
+	}
+
+	/**
 	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
 	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return the result.
 	 * Else, execute [type3Predicate] on the value of the third type and return the result.
@@ -843,10 +857,6 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 
 		fun <T1, T2> TriDiscriminatedUnion<T1, T2, out Throwable>.toResult(): Result<DiscriminatedUnion<T1, T2>> {
 			return map({ Result.success(DiscriminatedUnion.first(it)) }, { Result.success(DiscriminatedUnion.second(it)) }) { Result.failure(it) }
-		}
-
-		fun <T1, T2, T3> TriDiscriminatedUnion<T1, T2, T3>.toTriple(): Triple<T1?, T2?, T3?> {
-			return map({ Triple(it, null, null) }, { Triple(null, it, null) }) { Triple(null, null, it) }
 		}
 
 		@JvmStatic
