@@ -7,11 +7,13 @@ import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.flatten
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.flattenFirstAndSecond
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.flattenFirstAndThird
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.flattenSecondAndThird
+import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.flattenToQuadDiscriminatedUnion
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.flattenUnions
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.fourthTypeIfAllNull
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.orNullableTypes
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.takeUnlessAllNull
 import com.ogm.kotlin.discriminatedunion.TriDiscriminatedUnion.Companion.toResult
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -28,7 +30,7 @@ class TriDiscriminatedUnionTests {
 	private val union3 = TriDiscriminatedUnion.third<String, Int, LocalDate>(day)
 
 	@Test
-	fun sameTypesGettersTest() {
+	fun gettersTest() {
 		assertThat(union1.firstOrNull).isEqualTo("first")
 		assertThat(union1.secondOrNull).isNull()
 		assertThat(union1.thirdOrNull).isNull()
@@ -90,8 +92,8 @@ class TriDiscriminatedUnionTests {
 		assertThat(union2.firstOrGet { "default" }).isEqualTo("default")
 		assertThat(union2.secondOr(1337)).isEqualTo(2)
 		assertThat(union2.secondOrGet { 1337 }).isEqualTo(2)
-		assertThat(union2.thirdOr(LocalDate.of(2000, 1, 1))).isEqualTo(LocalDate.of(2000, 1, 1))
-		assertThat(union2.thirdOrGet { LocalDate.of(2000, 1, 1) }).isEqualTo(LocalDate.of(2000, 1, 1))
+		assertThat(union2.thirdOr(y2k)).isEqualTo(y2k)
+		assertThat(union2.thirdOrGet { y2k }).isEqualTo(y2k)
 		assertThat(union2.toString()).isEqualTo("2")
 		assertThat(union2.hashCode()).isEqualTo(2.hashCode())
 		@Suppress("AssertBetweenInconvertibleTypes")
@@ -129,8 +131,8 @@ class TriDiscriminatedUnionTests {
 		assertThat(union3.firstOrGet { "default" }).isEqualTo("default")
 		assertThat(union3.secondOr(1337)).isEqualTo(1337)
 		assertThat(union3.secondOrGet { 1337 }).isEqualTo(1337)
-		assertThat(union3.thirdOr(LocalDate.of(2000, 1, 1))).isEqualTo(day)
-		assertThat(union3.thirdOrGet { LocalDate.of(2000, 1, 1) }).isEqualTo(day)
+		assertThat(union3.thirdOr(y2k)).isEqualTo(day)
+		assertThat(union3.thirdOrGet { y2k }).isEqualTo(day)
 		assertThat(union3.toString()).isEqualTo("2023-10-21")
 		assertThat(union3.hashCode()).isEqualTo(day.hashCode())
 		@Suppress("AssertBetweenInconvertibleTypes")
@@ -254,6 +256,26 @@ class TriDiscriminatedUnionTests {
 			"2", "union2.also(false, true, false)", "union2.alsoSecond(true)",
 			"2023-10-21", "union3.also(false, false, true)", "union3.alsoThird(true)",
 		)
+
+		TriDiscriminatedUnion.first<String?, UUID?, BigDecimal?>(null).alsoFirst {
+			assertThat(it).isNull()
+			executed += it.toString()
+		}
+		TriDiscriminatedUnion.second<String?, UUID?, BigDecimal?>(null).alsoSecond {
+			assertThat(it).isNull()
+			executed += it.toString()
+		}
+		TriDiscriminatedUnion.third<String?, UUID?, BigDecimal?>(null).alsoThird {
+			assertThat(it).isNull()
+			executed += it.toString()
+		}
+
+		assertThat(executed).containsExactly(
+			"first", "union1.also(true, false, false)", "union1.alsoFirst(true)",
+			"2", "union2.also(false, true, false)", "union2.alsoSecond(true)",
+			"2023-10-21", "union3.also(false, false, true)", "union3.alsoThird(true)",
+			"null", "null", "null",
+		)
 	}
 
 	@Test
@@ -351,6 +373,48 @@ class TriDiscriminatedUnionTests {
 		assertThat(union3.flatMapSecond { it * it }).isEqualTo(union3)
 		assertThat(union3.flatMapThird { it.atStartOfDay() })
 			.isEqualTo(TriDiscriminatedUnion.third<String, Int, LocalDateTime>(LocalDateTime.of(day, LocalTime.MIDNIGHT)))
+	}
+
+	@Test
+	fun flatMapToQuadDiscriminatedUnionTest() {
+		assertThat(union1.flatMapFirstToQuadDiscriminatedUnion { DiscriminatedUnion.first<String, LocalTime>(it.repeat(2)) })
+			.isEqualTo(QuadDiscriminatedUnion.first<String, LocalTime, Int, LocalDate>("firstfirst"))
+		assertThat(union1.flatMapFirstToQuadDiscriminatedUnion { DiscriminatedUnion.second<String, LocalTime>(LocalTime.ofSecondOfDay(it.first().code.toLong())) })
+			.isEqualTo(QuadDiscriminatedUnion.second<String, LocalTime, Int, LocalDate>(LocalTime.of(0, 1, 42, 0)))
+		assertThat(union2.flatMapFirstToQuadDiscriminatedUnion { DiscriminatedUnion.first<String, LocalTime>(it.repeat(2)) })
+			.isEqualTo(QuadDiscriminatedUnion.third<String, LocalTime, Int, LocalDate>(2))
+		assertThat(union2.flatMapFirstToQuadDiscriminatedUnion { DiscriminatedUnion.second<String, LocalTime>(LocalTime.ofSecondOfDay(it.first().code.toLong())) })
+			.isEqualTo(QuadDiscriminatedUnion.third<String, LocalTime, Int, LocalDate>(2))
+		assertThat(union3.flatMapFirstToQuadDiscriminatedUnion { DiscriminatedUnion.first<String, LocalTime>(it.repeat(2)) })
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, LocalTime, Int, LocalDate>(day))
+		assertThat(union3.flatMapFirstToQuadDiscriminatedUnion { DiscriminatedUnion.second<String, LocalTime>(LocalTime.ofSecondOfDay(it.first().code.toLong())) })
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, LocalTime, Int, LocalDate>(day))
+
+		assertThat(union1.flatMapSecondToQuadDiscriminatedUnion { DiscriminatedUnion.first<LocalTime, Long>(LocalTime.ofSecondOfDay(it.toLong())) })
+			.isEqualTo(QuadDiscriminatedUnion.first<String, LocalTime, Long, LocalDate>("first"))
+		assertThat(union1.flatMapSecondToQuadDiscriminatedUnion { DiscriminatedUnion.second<LocalTime, Long>(it.toLong()) })
+			.isEqualTo(QuadDiscriminatedUnion.first<String, LocalTime, Long, LocalDate>("first"))
+		assertThat(union2.flatMapSecondToQuadDiscriminatedUnion { DiscriminatedUnion.first<LocalTime, Long>(LocalTime.ofSecondOfDay(it.toLong())) })
+			.isEqualTo(QuadDiscriminatedUnion.second<String, LocalTime, Long, LocalDate>(LocalTime.of(0, 0, 2, 0)))
+		assertThat(union2.flatMapSecondToQuadDiscriminatedUnion { DiscriminatedUnion.second<LocalTime, Long>((it * it).toLong()) })
+			.isEqualTo(QuadDiscriminatedUnion.third<String, LocalTime, Long, LocalDate>(4L))
+		assertThat(union3.flatMapSecondToQuadDiscriminatedUnion { DiscriminatedUnion.first<LocalTime, Long>(LocalTime.ofSecondOfDay(it.toLong())) })
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, LocalTime, Long, LocalDate>(day))
+		assertThat(union3.flatMapSecondToQuadDiscriminatedUnion { DiscriminatedUnion.second<LocalTime, Long>(it.toLong()) })
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, LocalTime, Long, LocalDate>(day))
+
+		assertThat(union1.flatMapThirdToQuadDiscriminatedUnion { DiscriminatedUnion.first<BigDecimal, LocalTime>(BigDecimal.valueOf(it.toEpochDay())) })
+			.isEqualTo(QuadDiscriminatedUnion.first<String, Int, BigDecimal, LocalTime>("first"))
+		assertThat(union1.flatMapThirdToQuadDiscriminatedUnion { DiscriminatedUnion.second<BigDecimal, LocalTime>(LocalTime.ofSecondOfDay(it.toEpochDay())) })
+			.isEqualTo(QuadDiscriminatedUnion.first<String, Int, BigDecimal, LocalTime>("first"))
+		assertThat(union2.flatMapThirdToQuadDiscriminatedUnion { DiscriminatedUnion.first<BigDecimal, LocalTime>(BigDecimal.valueOf(it.toEpochDay())) })
+			.isEqualTo(QuadDiscriminatedUnion.second<String, Int, BigDecimal, LocalTime>(2))
+		assertThat(union2.flatMapThirdToQuadDiscriminatedUnion { DiscriminatedUnion.second<BigDecimal, LocalTime>(LocalTime.ofSecondOfDay(it.toEpochDay())) })
+			.isEqualTo(QuadDiscriminatedUnion.second<String, Int, BigDecimal, LocalTime>(2))
+		assertThat(union3.flatMapThirdToQuadDiscriminatedUnion { DiscriminatedUnion.first<BigDecimal, LocalTime>(BigDecimal.valueOf(it.toEpochDay())) })
+			.isEqualTo(QuadDiscriminatedUnion.third<String, Int, BigDecimal, LocalTime>(BigDecimal.valueOf(19651L)))
+		assertThat(union3.flatMapThirdToQuadDiscriminatedUnion { DiscriminatedUnion.second<BigDecimal, LocalTime>(LocalTime.ofSecondOfDay(it.toEpochDay())) })
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, Int, BigDecimal, LocalTime>(LocalTime.of(5, 27, 31)))
 	}
 
 	@Test
@@ -667,6 +731,39 @@ class TriDiscriminatedUnionTests {
 			.isEqualTo(DiscriminatedUnion.second<Int, LocalDate>(y2k))
 		assertThat(TriDiscriminatedUnion.third<Int, LocalDate, Int>(1337).flattenFirstAndThird())
 			.isEqualTo(DiscriminatedUnion.first<Int, LocalDate>(1337))
+	}
+
+	@Test
+	fun flattenToQuadDiscriminatedUnionTest() {
+		val day = LocalDate.of(2023, 10, 21)
+		val uuid = UUID.randomUUID()
+
+		assertThat(TriDiscriminatedUnion.first<DiscriminatedUnion<String, Int>, LocalDate, UUID>(DiscriminatedUnion.first("lorem ipsum")).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.first<String, Int, LocalDate, UUID>("lorem ipsum"))
+		assertThat(TriDiscriminatedUnion.first<DiscriminatedUnion<String, Int>, LocalDate, UUID>(DiscriminatedUnion.second(1337)).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.second<String, Int, LocalDate, UUID>(1337))
+		assertThat(TriDiscriminatedUnion.second<DiscriminatedUnion<String, Int>, LocalDate, UUID>(day).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.third<String, Int, LocalDate, UUID>(day))
+		assertThat(TriDiscriminatedUnion.third<DiscriminatedUnion<String, Int>, LocalDate, UUID>(uuid).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, Int, LocalDate, UUID>(uuid))
+
+		assertThat(TriDiscriminatedUnion.first<String, DiscriminatedUnion<Int, LocalDate>, UUID>("lorem ipsum").flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.first<String, Int, LocalDate, UUID>("lorem ipsum"))
+		assertThat(TriDiscriminatedUnion.second<String, DiscriminatedUnion<Int, LocalDate>, UUID>(DiscriminatedUnion.first(1337)).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.second<String, Int, LocalDate, UUID>(1337))
+		assertThat(TriDiscriminatedUnion.second<String, DiscriminatedUnion<Int, LocalDate>, UUID>(DiscriminatedUnion.second(day)).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.third<String, Int, LocalDate, UUID>(day))
+		assertThat(TriDiscriminatedUnion.third<String, DiscriminatedUnion<Int, LocalDate>, UUID>(uuid).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, Int, LocalDate, UUID>(uuid))
+
+		assertThat(TriDiscriminatedUnion.first<String, Int, DiscriminatedUnion<LocalDate, UUID>>("lorem ipsum").flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.first<String, Int, LocalDate, UUID>("lorem ipsum"))
+		assertThat(TriDiscriminatedUnion.second<String, Int, DiscriminatedUnion<LocalDate, UUID>>(1337).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.second<String, Int, LocalDate, UUID>(1337))
+		assertThat(TriDiscriminatedUnion.third<String, Int, DiscriminatedUnion<LocalDate, UUID>>(DiscriminatedUnion.first(day)).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.third<String, Int, LocalDate, UUID>(day))
+		assertThat(TriDiscriminatedUnion.third<String, Int, DiscriminatedUnion<LocalDate, UUID>>(DiscriminatedUnion.second(uuid)).flattenToQuadDiscriminatedUnion())
+			.isEqualTo(QuadDiscriminatedUnion.fourth<String, Int, LocalDate, UUID>(uuid))
 	}
 
 	@Test

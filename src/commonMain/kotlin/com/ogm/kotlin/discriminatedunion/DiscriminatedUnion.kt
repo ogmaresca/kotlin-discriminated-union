@@ -4,10 +4,11 @@ package com.ogm.kotlin.discriminatedunion
  * A discriminated union with 2 possible types
  * @see <a href="https://en.wikipedia.org/wiki/Tagged_union">Tagged Union</a>
  * @see [TriDiscriminatedUnion] for a discriminated union with 3 types
+ * @see [QuadDiscriminatedUnion] for a discriminated union with 3 types
  */
 @JvmInline
 value class DiscriminatedUnion<T1, T2> private constructor(
-	private val value: Value<T1, T2>
+	private val value: Value<T1, T2>,
 ) : IDiscriminatedUnion<T1, T2> {
 	@Suppress("IMPLICIT_CAST_TO_ANY")
 	val unionValue
@@ -308,7 +309,85 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			this as DiscriminatedUnion<T1, R2>
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			(second(block(secondOrNull as T2)))
+			second(block(secondOrNull as T2))
+		}
+	}
+
+	/**
+	 * If [isFirstType], then execute [block] and return a [TriDiscriminatedUnion] with first or second type of the result.
+	 * Else, return a [TriDiscriminatedUnion] with the second type value in its third type.
+	 */
+	inline fun <R1, R2> flatMapFirstToTriDiscriminatedUnion(
+		block: (T1) -> DiscriminatedUnion<R1, R2>,
+	): TriDiscriminatedUnion<R1, R2, T2> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			block(firstOrNull as T1).map(
+				{ TriDiscriminatedUnion.first(it) },
+				{ TriDiscriminatedUnion.second(it) },
+			)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(secondOrNull as T2)
+		}
+	}
+
+	/**
+	 * If [isFirstType], then execute [block] and return a [QuadDiscriminatedUnion] with first or second or third type of the result.
+	 * Else, return a [QuadDiscriminatedUnion] with the second type value in its fourth type.
+	 */
+	inline fun <R1, R2, R3> flatMapFirstToQuadDiscriminatedUnion(
+		block: (T1) -> TriDiscriminatedUnion<R1, R2, R3>,
+	): QuadDiscriminatedUnion<R1, R2, R3, T2> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			block(firstOrNull as T1).map(
+				{ QuadDiscriminatedUnion.first(it) },
+				{ QuadDiscriminatedUnion.second(it) },
+				{ QuadDiscriminatedUnion.third(it) },
+			)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.fourth(secondOrNull as T2)
+		}
+	}
+
+	/**
+	 * If [isSecondType], then execute [block] and return a [TriDiscriminatedUnion] with second or third type of the result.
+	 * Else, return a [TriDiscriminatedUnion] with the first type value in its first type.
+	 */
+	inline fun <R2, R3> flatMapSecondToTriDiscriminatedUnion(
+		block: (T2) -> DiscriminatedUnion<R2, R3>,
+	): TriDiscriminatedUnion<T1, R2, R3> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(firstOrNull as T1)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			block(secondOrNull as T2).map(
+				{ TriDiscriminatedUnion.second(it) },
+				{ TriDiscriminatedUnion.third(it) },
+			)
+		}
+	}
+
+	/**
+	 * If [isSecondType], then execute [block] and return a [QuadDiscriminatedUnion] with first or second or third type of the result.
+	 * Else, return a [QuadDiscriminatedUnion] with the first type value in its first type.
+	 */
+	inline fun <R2, R3, R4> flatMapSecondToQuadDiscriminatedUnion(
+		block: (T2) -> TriDiscriminatedUnion<R2, R3, R4>,
+	): QuadDiscriminatedUnion<T1, R2, R3, R4> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.first(firstOrNull as T1)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			block(secondOrNull as T2).map(
+				{ QuadDiscriminatedUnion.second(it) },
+				{ QuadDiscriminatedUnion.third(it) },
+				{ QuadDiscriminatedUnion.fourth(it) },
+			)
 		}
 	}
 
@@ -597,7 +676,6 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 		}
 
 		// TODO documentation
-		// TODO QuintDiscriminatedUnion extensions
 		// TODO add JSON support with Jackson JSON and kotlinx.serialization
 		// TODO JSON support serialization modes: serialize as first successful, last successful, and type with most non-null fields
 		// TODO OpenAPI support via springdoc-swaggerui

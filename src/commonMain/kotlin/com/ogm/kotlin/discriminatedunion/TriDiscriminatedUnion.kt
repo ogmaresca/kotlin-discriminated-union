@@ -4,10 +4,11 @@ package com.ogm.kotlin.discriminatedunion
  * A discriminated union with 3 possible types
  * @see <a href="https://en.wikipedia.org/wiki/Tagged_union">Tagged Union</a>
  * @see [DiscriminatedUnion] for a discriminated union with 2 types
+ * @see [QuadDiscriminatedUnion] for a discriminated union with 3 types
  */
 @JvmInline
 value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
-	private val value: Value<T1, T2, T3>
+	private val value: Value<T1, T2, T3>,
 ) : ITriDiscriminatedUnion<T1, T2, T3> {
 	@Suppress("IMPLICIT_CAST_TO_ANY")
 	val unionValue
@@ -445,7 +446,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 
 	/**
 	 * If [isSecondType] is true, execute [block] and return a 2 value [DiscriminatedUnion].
-	 * Else return a 2 value [DiscriminatedUnion] of the third and third types.
+	 * Else return a 2 value [DiscriminatedUnion] of the first and third types.
 	 */
 	inline fun mapSecondToFirst(
 		block: (T2) -> T1,
@@ -553,7 +554,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 	): TriDiscriminatedUnion<T1, R2, T3> {
 		return if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			(second(block(secondOrNull as T2)))
+			second(block(secondOrNull as T2))
 		} else {
 			@Suppress("UNCHECKED_CAST")
 			this as TriDiscriminatedUnion<T1, R2, T3>
@@ -565,10 +566,76 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 	): TriDiscriminatedUnion<T1, T2, R3> {
 		return if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
-			(third(block(thirdOrNull as T3)))
+			third(block(thirdOrNull as T3))
 		} else {
 			@Suppress("UNCHECKED_CAST")
 			this as TriDiscriminatedUnion<T1, T2, R3>
+		}
+	}
+
+	/**
+	 * If [isFirstType], then execute [block] and return a [QuadDiscriminatedUnion] with first or second type of the result.
+	 * Else, return a [QuadDiscriminatedUnion] with the second or third type.
+	 */
+	inline fun <R1, R2> flatMapFirstToQuadDiscriminatedUnion(
+		block: (T1) -> DiscriminatedUnion<R1, R2>,
+	): QuadDiscriminatedUnion<R1, R2, T2, T3> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			block(firstOrNull as T1).map(
+				{ QuadDiscriminatedUnion.first(it) },
+				{ QuadDiscriminatedUnion.second(it) },
+			)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.third(secondOrNull as T2)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.fourth(thirdOrNull as T3)
+		}
+	}
+
+	/**
+	 * If [isSecondType], then execute [block] and return a [QuadDiscriminatedUnion] with first or second type of the result.
+	 * Else, return a [QuadDiscriminatedUnion] with the first or third type.
+	 */
+	inline fun <R2, R3> flatMapSecondToQuadDiscriminatedUnion(
+		block: (T2) -> DiscriminatedUnion<R2, R3>,
+	): QuadDiscriminatedUnion<T1, R2, R3, T3> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.first(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			block(secondOrNull as T2).map(
+				{ QuadDiscriminatedUnion.second(it) },
+				{ QuadDiscriminatedUnion.third(it) },
+			)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.fourth(thirdOrNull as T3)
+		}
+	}
+
+	/**
+	 * If [isThirdType], then execute [block] and return a [QuadDiscriminatedUnion] with first or second type of the result.
+	 * Else, return a [QuadDiscriminatedUnion] with the second or third type.
+	 */
+	inline fun <R3, R4> flatMapThirdToQuadDiscriminatedUnion(
+		block: (T3) -> DiscriminatedUnion<R3, R4>,
+	): QuadDiscriminatedUnion<T1, T2, R3, R4> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.first(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			QuadDiscriminatedUnion.second(secondOrNull as T2)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			block(thirdOrNull as T3).map(
+				{ QuadDiscriminatedUnion.third(it) },
+				{ QuadDiscriminatedUnion.fourth(it) },
+			)
 		}
 	}
 
@@ -676,7 +743,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 	/**
 	 * If [isFirstType] is true, return [type1Predicate].
 	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return the result.
-	 * Else, execute [type3Predicate] on the value of the second type and return the result.
+	 * Else, execute [type3Predicate] on the value of the third type and return the result.
 	 */
 	inline fun anyOf(
 		type1Predicate: Boolean,
@@ -697,7 +764,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 	/**
 	 * If [isFirstType] is true, return [type1Predicate].
 	 * Else if [isSecondType], return [type2Predicate].
-	 * Else, execute [type3Predicate] on the value of the second type and return the result.
+	 * Else, execute [type3Predicate] on the value of the third type and return the result.
 	 */
 	inline fun anyOf(
 		type1Predicate: Boolean,
@@ -737,7 +804,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 	/**
 	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
 	 * Else if [isSecondType], return [type2Predicate].
-	 * Else, execute [type3Predicate] on the value of the second type and return the result.
+	 * Else, execute [type3Predicate] on the value of the third type and return the result.
 	 */
 	inline fun anyOf(
 		type1Predicate: (T1) -> Boolean,
@@ -799,7 +866,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 	/**
 	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return true if [type1Predicate] returns false.
 	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return true if [type2Predicate] returns false.
-	 * Else, execute [type3Predicate] on the value of the second type and return true if [type3Predicate] returns false.
+	 * Else, execute [type3Predicate] on the value of the third type and return true if [type3Predicate] returns false.
 	 */
 	inline fun noneOf(
 		type1Predicate: (T1) -> Boolean,
@@ -879,7 +946,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 			}
 
 		@JvmStatic
-		val <T1 : Any, T2 : Any, T3: Any> TriDiscriminatedUnion<T1?, T2?, T3?>?.allNull: Boolean
+		val <T1 : Any, T2 : Any, T3 : Any> TriDiscriminatedUnion<T1?, T2?, T3?>?.allNull: Boolean
 			get() = takeUnless { it?.unionValue == null } == null
 
 		@JvmStatic
@@ -902,7 +969,7 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 		}
 
 		@JvmStatic
-		fun <T1 : Any, T2 : Any, T3: Any> TriDiscriminatedUnion<T1?, T2?, T3?>?.takeUnlessAllNull(): TriDiscriminatedUnion<T1, T2, T3>? {
+		fun <T1 : Any, T2 : Any, T3 : Any> TriDiscriminatedUnion<T1?, T2?, T3?>?.takeUnlessAllNull(): TriDiscriminatedUnion<T1, T2, T3>? {
 			@Suppress("UNCHECKED_CAST")
 			return takeUnless { it?.unionValue == null } as TriDiscriminatedUnion<T1, T2, T3>?
 		}
@@ -1091,7 +1158,6 @@ value class TriDiscriminatedUnion<T1, T2, T3> private constructor(
 		}
 
 		// TODO documentation
-		// TODO QuintDiscriminatedUnion extensions
 		// TODO add JSON support with Jackson JSON and kotlinx.serialization
 		// TODO JSON support serialization modes: serialize as first successful, last successful, and type with most non-null fields
 		// TODO OpenAPI support via springdoc-swaggerui

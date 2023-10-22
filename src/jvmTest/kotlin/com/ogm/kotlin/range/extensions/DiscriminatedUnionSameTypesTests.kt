@@ -125,8 +125,12 @@ class DiscriminatedUnionSameTypesTests {
 		union2.alsoSecond { executed += "union2.alsoSecond(true)" }
 
 		assertThat(executed).containsExactly(
-			"first", "union1.also(true, false)", "union1.alsoFirst(true)",
-			"second", "union2.also(false, true)", "union2.alsoSecond(true)",
+			"first",
+			"union1.also(true, false)",
+			"union1.alsoFirst(true)",
+			"second",
+			"union2.also(false, true)",
+			"union2.alsoSecond(true)",
 		)
 	}
 
@@ -142,8 +146,12 @@ class DiscriminatedUnionSameTypesTests {
 		union2.applySecond { executed += "union2.applySecond(true)" }
 
 		assertThat(executed).containsExactly(
-			"first", "union1.apply(true, false)", "union1.applyFirst(true)",
-			"second", "union2.apply(false, true)", "union2.applySecond(true)",
+			"first",
+			"union1.apply(true, false)",
+			"union1.applyFirst(true)",
+			"second",
+			"union2.apply(false, true)",
+			"union2.applySecond(true)",
 		)
 	}
 

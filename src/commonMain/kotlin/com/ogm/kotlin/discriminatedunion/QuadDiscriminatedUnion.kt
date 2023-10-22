@@ -1,13 +1,14 @@
 package com.ogm.kotlin.discriminatedunion
 
 /**
- * A discriminated union with 3 possible types
+ * A discriminated union with 4 possible types
  * @see <a href="https://en.wikipedia.org/wiki/Tagged_union">Tagged Union</a>
  * @see [DiscriminatedUnion] for a discriminated union with 2 types
+ * @see [TriDiscriminatedUnion] for a discriminated union with 3 types
  */
 @JvmInline
 value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
-	private val value: Value<T1, T2, T3, T4>
+	private val value: Value<T1, T2, T3, T4>,
 ) : IQuadDiscriminatedUnion<T1, T2, T3, T4> {
 	@Suppress("IMPLICIT_CAST_TO_ANY")
 	val unionValue
@@ -52,7 +53,7 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		get() = value is Value3<T1, T2, T3, T4>
 
 	override val isFourthType: Boolean
-		get() = value is Value3<T1, T2, T3, T4>
+		get() = value is Value4<T1, T2, T3, T4>
 
 	override val position: Int
 		get() = when (value) {
@@ -146,7 +147,7 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 	}
 
 	inline fun fourthOrGet(block: () -> T4): T4 {
-		return if (isThirdType) {
+		return if (isFourthType) {
 			@Suppress("UNCHECKED_CAST")
 			fourthOrNull as T4
 		} else {
@@ -154,10 +155,11 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		}
 	}
 
-	/*inline fun takeIf(
+	inline fun takeIf(
 		type1Predicate: (T1) -> Boolean,
 		type2Predicate: (T2) -> Boolean,
 		type3Predicate: (T3) -> Boolean,
+		type4Predicate: (T4) -> Boolean,
 	): QuadDiscriminatedUnion<T1, T2, T3, T4>? {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -165,9 +167,12 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			takeIf { type2Predicate(secondOrNull as T2) }
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			takeIf { type3Predicate(thirdOrNull as T3) }
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			takeIf { type4Predicate(fourthOrNull as T4) }
 		}
 	}
 
@@ -204,10 +209,22 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		}
 	}
 
+	inline fun takeIfFourth(
+		predicate: (T4) -> Boolean,
+	): QuadDiscriminatedUnion<T1, T2, T3, T4>? {
+		return if (isFourthType) {
+			@Suppress("UNCHECKED_CAST")
+			takeIf { predicate(fourthOrNull as T4) }
+		} else {
+			this
+		}
+	}
+
 	inline fun takeUnless(
 		type1Predicate: (T1) -> Boolean,
 		type2Predicate: (T2) -> Boolean,
 		type3Predicate: (T3) -> Boolean,
+		type4Predicate: (T4) -> Boolean,
 	): QuadDiscriminatedUnion<T1, T2, T3, T4>? {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -215,9 +232,12 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			takeUnless { type2Predicate(secondOrNull as T2) }
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			takeUnless { type3Predicate(thirdOrNull as T3) }
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			takeUnless { type4Predicate(fourthOrNull as T4) }
 		}
 	}
 
@@ -254,10 +274,22 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		}
 	}
 
+	inline fun takeUnlessFourth(
+		predicate: (T4) -> Boolean,
+	): QuadDiscriminatedUnion<T1, T2, T3, T4>? {
+		return if (isFourthType) {
+			@Suppress("UNCHECKED_CAST")
+			takeUnless { predicate(fourthOrNull as T4) }
+		} else {
+			this
+		}
+	}
+
 	inline fun also(
 		type1Also: (T1) -> Unit,
 		type2Also: (T2) -> Unit,
 		type3Also: (T3) -> Unit,
+		type4Also: (T4) -> Unit,
 	): QuadDiscriminatedUnion<T1, T2, T3, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -265,9 +297,12 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			also { type2Also(secondOrNull as T2) }
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			also { type3Also(thirdOrNull as T3) }
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			also { type4Also(fourthOrNull as T4) }
 		}
 	}
 
@@ -304,10 +339,22 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		}
 	}
 
+	inline fun alsoFourth(
+		block: (T4) -> Unit,
+	): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+		return if (isFourthType) {
+			@Suppress("UNCHECKED_CAST")
+			also { block(fourthOrNull as T4) }
+		} else {
+			this
+		}
+	}
+
 	inline fun apply(
 		type1Apply: T1.() -> Unit,
 		type2Apply: T2.() -> Unit,
 		type3Apply: T3.() -> Unit,
+		type4Apply: T4.() -> Unit,
 	): QuadDiscriminatedUnion<T1, T2, T3, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -315,9 +362,12 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			apply { (secondOrNull as T2).type2Apply() }
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			apply { (thirdOrNull as T3).type3Apply() }
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			apply { (fourthOrNull as T4).type4Apply() }
 		}
 	}
 
@@ -352,7 +402,18 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else {
 			this
 		}
-	}*/
+	}
+
+	inline fun applyFourth(
+		block: T4.() -> Unit,
+	): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+		return if (isFourthType) {
+			@Suppress("UNCHECKED_CAST")
+			also { (fourthOrNull as T4).block() }
+		} else {
+			this
+		}
+	}
 
 	/**
 	 * If [isFirstType], execute [type1Block] on the value and return the result.
@@ -379,16 +440,18 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 			@Suppress("UNCHECKED_CAST")
 			type4Block(fourthOrNull as T4)
 		}
-	}/*
+	}
 
 	/**
 	 * If [isFirstType] is true, return the value directly.
 	 * Else if [isSecondType], execute [type2Block] on the value and return the result.
-	 * Else, execute [type3Block] on the value and return the result.
+	 * Else if [isThirdType], execute [type3Block] on the value and return the result.
+	 * Else, execute [type4Block] on the value and return the result.
 	 */
 	inline fun mapToFirst(
 		type2Block: (T2) -> T1,
 		type3Block: (T3) -> T1,
+		type4Block: (T4) -> T1,
 	): T1 {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -396,20 +459,25 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			type2Block(secondOrNull as T2)
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			type3Block(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			type4Block(fourthOrNull as T4)
 		}
 	}
 
 	/**
 	 * If [isSecondType] is true, return the value directly.
 	 * Else if [isFirstType], execute [type1Block] on the value and return the result.
-	 * Else, execute [type3Block] on the value and return the result.
+	 * Else if [isThirdType], execute [type3Block] on the value and return the result.
+	 * Else, execute [type4Block] on the value and return the result.
 	 */
 	inline fun mapToSecond(
 		type1Block: (T1) -> T2,
 		type3Block: (T3) -> T2,
+		type4Block: (T4) -> T2,
 	): T2 {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -417,20 +485,25 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			secondOrNull as T2
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			type3Block(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			type4Block(fourthOrNull as T4)
 		}
 	}
 
 	/**
 	 * If [isThirdType] is true, return the value directly.
 	 * Else if [isFirstType], execute [type1Block] on the value and return the result.
-	 * Else, execute [type2Block] on the value and return the result.
+	 * Else if [isSecondType], execute [type2Block] on the value and return the result.
+	 * Else, execute [type4Block] on the value and return the result.
 	 */
 	inline fun mapToThird(
 		type1Block: (T1) -> T3,
 		type2Block: (T2) -> T3,
+		type4Block: (T4) -> T3,
 	): T3 {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -438,178 +511,373 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			type2Block(secondOrNull as T2)
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			thirdOrNull as T3
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			type4Block(fourthOrNull as T4)
+		}
+	}
+
+	/**
+	 * If [isFourthType] is true, return the value directly.
+	 * Else if [isFirstType], execute [type1Block] on the value and return the result.
+	 * Else if [isSecondType], execute [type2Block] on the value and return the result.
+	 * Else, execute [type3Block] on the value and return the result.
+	 */
+	inline fun mapToFourth(
+		type1Block: (T1) -> T4,
+		type2Block: (T2) -> T4,
+		type3Block: (T3) -> T4,
+	): T4 {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			type1Block(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			type2Block(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			type3Block(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			fourthOrNull as T4
 		}
 	}
 
 	/**
 	 * If [isFirstType] is true, execute [block] and return a 2 value [DiscriminatedUnion].
-	 * Else return a 2 value [DiscriminatedUnion] of the second and third types.
+	 * Else return a 3 value [TriDiscriminatedUnion] of the second, third, and fourth types.
 	 */
 	inline fun mapFirstToSecond(
 		block: (T1) -> T2,
-	): DiscriminatedUnion<T2, T3> {
+	): TriDiscriminatedUnion<T2, T3, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(block(firstOrNull as T1))
+			TriDiscriminatedUnion.first(block(firstOrNull as T1))
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(secondOrNull as T2)
+			TriDiscriminatedUnion.first(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(thirdOrNull as T3)
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(thirdOrNull as T3)
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
 		}
 	}
 
 	/**
-	 * If [isFirstType] is true, execute [block] and return a 2 value [DiscriminatedUnion].
-	 * Else return a 2 value [DiscriminatedUnion] of the second and third types.
+	 * If [isFirstType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the second, third, and fourth types.
 	 */
 	inline fun mapFirstToThird(
 		block: (T1) -> T3,
-	): DiscriminatedUnion<T2, T3> {
+	): TriDiscriminatedUnion<T2, T3, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(block(firstOrNull as T1))
+			TriDiscriminatedUnion.second(block(firstOrNull as T1))
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(secondOrNull as T2)
+			TriDiscriminatedUnion.first(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(thirdOrNull as T3)
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(thirdOrNull as T3)
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
 		}
 	}
 
 	/**
-	 * If [isSecondType] is true, execute [block] and return a 2 value [DiscriminatedUnion].
-	 * Else return a 2 value [DiscriminatedUnion] of the third and third types.
+	 * If [isFirstType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the second, third, and fourth types.
+	 */
+	inline fun mapFirstToFourth(
+		block: (T1) -> T4,
+	): TriDiscriminatedUnion<T2, T3, T4> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(block(firstOrNull as T1))
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
+		}
+	}
+
+	/**
+	 * If [isSecondType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, third, and fourth types.
 	 */
 	inline fun mapSecondToFirst(
 		block: (T2) -> T1,
-	): DiscriminatedUnion<T1, T3> {
+	): TriDiscriminatedUnion<T1, T3, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(firstOrNull as T1)
+			TriDiscriminatedUnion.first(firstOrNull as T1)
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(block(secondOrNull as T2))
+			TriDiscriminatedUnion.first(block(secondOrNull as T2))
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(thirdOrNull as T3)
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(thirdOrNull as T3)
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
 		}
 	}
 
 	/**
-	 * If [isSecondType] is true, execute [block] and return a 2 value [DiscriminatedUnion].
-	 * Else return a 2 value [DiscriminatedUnion] of the first and third types.
+	 * If [isSecondType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, third, and fourth types.
 	 */
 	inline fun mapSecondToThird(
 		block: (T2) -> T3,
-	): DiscriminatedUnion<T1, T3> {
+	): TriDiscriminatedUnion<T1, T3, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(firstOrNull as T1)
+			TriDiscriminatedUnion.first(firstOrNull as T1)
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(block(secondOrNull as T2))
+			TriDiscriminatedUnion.second(block(secondOrNull as T2))
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(thirdOrNull as T3)
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(thirdOrNull as T3)
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
 		}
 	}
 
 	/**
-	 * If [isThirdType] is true, execute [block] and return a 2 value [DiscriminatedUnion].
-	 * Else return a 2 value [DiscriminatedUnion] of the first and second types.
+	 * If [isSecondType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, third, and fourth types.
+	 */
+	inline fun mapSecondToFourth(
+		block: (T2) -> T4,
+	): TriDiscriminatedUnion<T1, T3, T4> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(block(secondOrNull as T2))
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
+		}
+	}
+
+	/**
+	 * If [isThirdType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, second, and fourth types.
 	 */
 	inline fun mapThirdToFirst(
 		block: (T3) -> T1,
-	): DiscriminatedUnion<T1, T2> {
+	): TriDiscriminatedUnion<T1, T2, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(firstOrNull as T1)
+			TriDiscriminatedUnion.first(firstOrNull as T1)
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(secondOrNull as T2)
+			TriDiscriminatedUnion.second(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(block(thirdOrNull as T3))
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(block(thirdOrNull as T3))
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
 		}
 	}
 
 	/**
-	 * If [isThirdType] is true, execute [block] and return a 2 value [DiscriminatedUnion].
-	 * Else return a 2 value [DiscriminatedUnion] of the first and second types.
+	 * If [isThirdType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, second, and fourth types.
 	 */
 	inline fun mapThirdToSecond(
 		block: (T3) -> T2,
-	): DiscriminatedUnion<T1, T2> {
+	): TriDiscriminatedUnion<T1, T2, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.first(firstOrNull as T1)
+			TriDiscriminatedUnion.first(firstOrNull as T1)
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(secondOrNull as T2)
+			TriDiscriminatedUnion.second(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(block(thirdOrNull as T3))
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			DiscriminatedUnion.second(block(thirdOrNull as T3))
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
 		}
 	}
 
-	inline fun <R1, R2, R3> flatMap(
+	/**
+	 * If [isThirdType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, second, and fourth types.
+	 */
+	inline fun mapThirdToFourth(
+		block: (T3) -> T4,
+	): TriDiscriminatedUnion<T1, T2, T4> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(block(thirdOrNull as T3))
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(fourthOrNull as T4)
+		}
+	}
+
+	/**
+	 * If [isFourthType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, second, and fourth types.
+	 */
+	inline fun mapFourthToFirst(
+		block: (T4) -> T1,
+	): TriDiscriminatedUnion<T1, T2, T3> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(block(fourthOrNull as T4))
+		}
+	}
+
+	/**
+	 * If [isFourthType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, second, and fourth types.
+	 */
+	inline fun mapFourthToSecond(
+		block: (T4) -> T2,
+	): TriDiscriminatedUnion<T1, T2, T3> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(block(fourthOrNull as T4))
+		}
+	}
+
+	/**
+	 * If [isFourthType] is true, execute [block] and return a 3 value [TriDiscriminatedUnion].
+	 * Else return a 3 value [TriDiscriminatedUnion] of the first, second, and fourth types.
+	 */
+	inline fun mapFourthToThird(
+		block: (T4) -> T3,
+	): TriDiscriminatedUnion<T1, T2, T3> {
+		return if (isFirstType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.first(firstOrNull as T1)
+		} else if (isSecondType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.second(secondOrNull as T2)
+		} else if (isThirdType) {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			TriDiscriminatedUnion.third(block(fourthOrNull as T4))
+		}
+	}
+
+	inline fun <R1, R2, R3, R4> flatMap(
 		type1Block: (T1) -> R1,
 		type2Block: (T2) -> R2,
 		type3Block: (T3) -> R3,
-	): QuadDiscriminatedUnion<R1, R2, R3> {
+		type4Block: (T4) -> R4,
+	): QuadDiscriminatedUnion<R1, R2, R3, R4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
 			first(type1Block(firstOrNull as T1))
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			second(type2Block(secondOrNull as T2))
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			third(type3Block(thirdOrNull as T3))
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			fourth(type4Block(fourthOrNull as T4))
 		}
 	}
 
 	inline fun <R1> flatMapFirst(
 		block: (T1) -> R1,
-	): QuadDiscriminatedUnion<R1, T2, T3> {
+	): QuadDiscriminatedUnion<R1, T2, T3, T4> {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
 			first(block(firstOrNull as T1))
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			this as QuadDiscriminatedUnion<R1, T2, T3>
+			this as QuadDiscriminatedUnion<R1, T2, T3, T4>
 		}
 	}
 
 	inline fun <R2> flatMapSecond(
 		block: (T2) -> R2,
-	): QuadDiscriminatedUnion<T1, R2, T3> {
+	): QuadDiscriminatedUnion<T1, R2, T3, T4> {
 		return if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
-			(second(block(secondOrNull as T2)))
+			second(block(secondOrNull as T2))
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			this as QuadDiscriminatedUnion<T1, R2, T3>
+			this as QuadDiscriminatedUnion<T1, R2, T3, T4>
 		}
 	}
 
 	inline fun <R3> flatMapThird(
 		block: (T3) -> R3,
-	): QuadDiscriminatedUnion<T1, T2, R3> {
+	): QuadDiscriminatedUnion<T1, T2, R3, T4> {
 		return if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
-			(third(block(thirdOrNull as T3)))
+			third(block(thirdOrNull as T3))
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			this as QuadDiscriminatedUnion<T1, T2, R3>
+			this as QuadDiscriminatedUnion<T1, T2, R3, T4>
 		}
-	}*/
+	}
+
+	inline fun <R4> flatMapFourth(
+		block: (T4) -> R4,
+	): QuadDiscriminatedUnion<T1, T2, T3, R4> {
+		return if (isFourthType) {
+			@Suppress("UNCHECKED_CAST")
+			fourth(block(fourthOrNull as T4))
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			this as QuadDiscriminatedUnion<T1, T2, T3, R4>
+		}
+	}
 
 	override fun orDefaults(
 		type1Default: T1,
@@ -752,17 +1020,19 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 			{ Quadruple(null, null, it, null) },
 			{ Quadruple(null, null, null, it) },
 		)
-	}/*
+	}
 
 	/**
 	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
 	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return the result.
-	 * Else, execute [type3Predicate] on the value of the third type and return the result.
+	 * Else if [isThirdType], execute [type3Predicate] on the value of the third type and return the result.
+	 * Else, execute [type4Predicate] on the value of the fourth type and return the result.
 	 */
 	inline fun anyOf(
 		type1Predicate: (T1) -> Boolean,
 		type2Predicate: (T2) -> Boolean,
 		type3Predicate: (T3) -> Boolean,
+		type4Predicate: (T4) -> Boolean,
 	): Boolean {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -770,144 +1040,26 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			type2Predicate(secondOrNull as T2)
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			type3Predicate(thirdOrNull as T3)
-		}
-	}
-
-	/**
-	 * If [isFirstType] is true, return [type1Predicate].
-	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return the result.
-	 * Else, execute [type3Predicate] on the value of the second type and return the result.
-	 */
-	inline fun anyOf(
-		type1Predicate: Boolean,
-		type2Predicate: (T2) -> Boolean,
-		type3Predicate: (T3) -> Boolean,
-	): Boolean {
-		return if (isFirstType) {
-			type1Predicate
-		} else if (isSecondType) {
-			@Suppress("UNCHECKED_CAST")
-			type2Predicate(secondOrNull as T2)
 		} else {
 			@Suppress("UNCHECKED_CAST")
-			type3Predicate(thirdOrNull as T3)
-		}
-	}
-
-	/**
-	 * If [isFirstType] is true, return [type1Predicate].
-	 * Else if [isSecondType], return [type2Predicate].
-	 * Else, execute [type3Predicate] on the value of the second type and return the result.
-	 */
-	inline fun anyOf(
-		type1Predicate: Boolean,
-		type2Predicate: Boolean,
-		type3Predicate: (T3) -> Boolean,
-	): Boolean {
-		return if (isFirstType) {
-			type1Predicate
-		} else if (isSecondType) {
-			type2Predicate
-		} else {
-			@Suppress("UNCHECKED_CAST")
-			type3Predicate(thirdOrNull as T3)
-		}
-	}
-
-	/**
-	 * If [isFirstType] is true, return [type1Predicate].
-	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return the result.
-	 * Else, return [type3Predicate].
-	 */
-	inline fun anyOf(
-		type1Predicate: Boolean,
-		type2Predicate: (T2) -> Boolean,
-		type3Predicate: Boolean,
-	): Boolean {
-		return if (isFirstType) {
-			type1Predicate
-		} else if (isSecondType) {
-			@Suppress("UNCHECKED_CAST")
-			type2Predicate(secondOrNull as T2)
-		} else {
-			type3Predicate
-		}
-	}
-
-	/**
-	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
-	 * Else if [isSecondType], return [type2Predicate].
-	 * Else, execute [type3Predicate] on the value of the second type and return the result.
-	 */
-	inline fun anyOf(
-		type1Predicate: (T1) -> Boolean,
-		type2Predicate: Boolean,
-		type3Predicate: (T3) -> Boolean,
-	): Boolean {
-		return if (isFirstType) {
-			@Suppress("UNCHECKED_CAST")
-			type1Predicate(firstOrNull as T1)
-		} else if (isSecondType) {
-			type2Predicate
-		} else {
-			@Suppress("UNCHECKED_CAST")
-			type3Predicate(thirdOrNull as T3)
-		}
-	}
-
-	/**
-	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
-	 * Else if [isSecondType], return [type2Predicate].
-	 * Else, return [type3Predicate].
-	 */
-	inline fun anyOf(
-		type1Predicate: (T1) -> Boolean,
-		type2Predicate: Boolean,
-		type3Predicate: Boolean,
-	): Boolean {
-		return if (isFirstType) {
-			@Suppress("UNCHECKED_CAST")
-			type1Predicate(firstOrNull as T1)
-		} else if (isSecondType) {
-			type2Predicate
-		} else {
-			type3Predicate
-		}
-	}
-
-	/**
-	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return the result.
-	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return the result.
-	 * Else, return [type3Predicate]
-	 */
-	inline fun anyOf(
-		type1Predicate: (T1) -> Boolean,
-		type2Predicate: (T2) -> Boolean,
-		type3Predicate: Boolean,
-	): Boolean {
-		return if (isFirstType) {
-			@Suppress("UNCHECKED_CAST")
-			type1Predicate(firstOrNull as T1)
-		} else if (isSecondType) {
-			@Suppress("UNCHECKED_CAST")
-			type2Predicate(secondOrNull as T2)
-		} else {
-			type3Predicate
+			type4Predicate(fourthOrNull as T4)
 		}
 	}
 
 	/**
 	 * If [isFirstType] is true, execute [type1Predicate] on the value of the first type and return true if [type1Predicate] returns false.
 	 * Else if [isSecondType], execute [type2Predicate] on the value of the second type and return true if [type2Predicate] returns false.
-	 * Else, execute [type3Predicate] on the value of the second type and return true if [type3Predicate] returns false.
+	 * Else if [isThirdType], execute [type3Predicate] on the value of the third type and return true if [type3Predicate] returns false.
+	 * Else, execute [type4Predicate] on the value of the fourth type and return true if [type4Predicate] returns false.
 	 */
 	inline fun noneOf(
 		type1Predicate: (T1) -> Boolean,
 		type2Predicate: (T2) -> Boolean,
 		type3Predicate: (T3) -> Boolean,
+		type4Predicate: (T4) -> Boolean,
 	): Boolean {
 		return if (isFirstType) {
 			@Suppress("UNCHECKED_CAST")
@@ -915,44 +1067,74 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		} else if (isSecondType) {
 			@Suppress("UNCHECKED_CAST")
 			!type2Predicate(secondOrNull as T2)
-		} else {
+		} else if (isThirdType) {
 			@Suppress("UNCHECKED_CAST")
 			!type3Predicate(thirdOrNull as T3)
+		} else {
+			@Suppress("UNCHECKED_CAST")
+			!type4Predicate(fourthOrNull as T4)
 		}
 	}
 
 	/**
 	 * Return a [QuadDiscriminatedUnion] with the types reversed
 	 */
-	fun reverse(): QuadDiscriminatedUnion<T3, T2, T1> {
+	fun reverse(): QuadDiscriminatedUnion<T4, T3, T2, T1> {
 		return when (value) {
-			is Value1<T1, T2, T3, T4> -> third(value.value)
+			is Value1<T1, T2, T3, T4> -> fourth(value.value)
+			is Value2<T1, T2, T3, T4> -> third(value.value)
+			is Value3<T1, T2, T3, T4> -> second(value.value)
+			is Value4<T1, T2, T3, T4> -> first(value.value)
+		}
+	}
+
+	/**
+	 * Return a [QuadDiscriminatedUnion] with the first and last types reversed
+	 */
+	fun reverseFirstAndLast(): QuadDiscriminatedUnion<T4, T2, T3, T1> {
+		return when (value) {
+			is Value1<T1, T2, T3, T4> -> fourth(value.value)
 			is Value2<T1, T2, T3, T4> -> second(value.value)
-			is Value3<T1, T2, T3, T4> -> first(value.value)
+			is Value3<T1, T2, T3, T4> -> third(value.value)
+			is Value4<T1, T2, T3, T4> -> first(value.value)
+		}
+	}
+
+	/**
+	 * Return a [QuadDiscriminatedUnion] with the first and second types reversed and the third and fourth types reversed
+	 */
+	fun reverseEnds(): QuadDiscriminatedUnion<T2, T1, T4, T3> {
+		return when (value) {
+			is Value1<T1, T2, T3, T4> -> second(value.value)
+			is Value2<T1, T2, T3, T4> -> first(value.value)
+			is Value3<T1, T2, T3, T4> -> fourth(value.value)
+			is Value4<T1, T2, T3, T4> -> third(value.value)
 		}
 	}
 
 	/**
 	 * Return a [QuadDiscriminatedUnion] with the first two types reversed
 	 */
-	fun reverseFirstTwo(): QuadDiscriminatedUnion<T2, T1, T3> {
+	fun reverseFirstTwo(): QuadDiscriminatedUnion<T2, T1, T3, T4> {
 		return when (value) {
 			is Value1<T1, T2, T3, T4> -> second(value.value)
 			is Value2<T1, T2, T3, T4> -> first(value.value)
 			is Value3<T1, T2, T3, T4> -> third(value.value)
+			is Value4<T1, T2, T3, T4> -> fourth(value.value)
 		}
 	}
 
 	/**
 	 * Return a [QuadDiscriminatedUnion] with the last two types reversed
 	 */
-	fun reverseLastTwo(): QuadDiscriminatedUnion<T1, T3, T2> {
+	fun reverseLastTwo(): QuadDiscriminatedUnion<T1, T2, T4, T3> {
 		return when (value) {
 			is Value1<T1, T2, T3, T4> -> first(value.value)
-			is Value2<T1, T2, T3, T4> -> third(value.value)
-			is Value3<T1, T2, T3, T4> -> second(value.value)
+			is Value2<T1, T2, T3, T4> -> second(value.value)
+			is Value3<T1, T2, T3, T4> -> fourth(value.value)
+			is Value4<T1, T2, T3, T4> -> third(value.value)
 		}
-	}*/
+	}
 
 	override fun toString() = value.toString()
 
@@ -988,7 +1170,7 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 			}
 
 		@JvmStatic
-		val <T1 : Any, T2 : Any, T3: Any, T4: Any> QuadDiscriminatedUnion<T1?, T2?, T3?, T4?>?.allNull: Boolean
+		val <T1 : Any, T2 : Any, T3 : Any, T4 : Any> QuadDiscriminatedUnion<T1?, T2?, T3?, T4?>?.allNull: Boolean
 			get() = takeUnless { it?.unionValue == null } == null
 
 		@JvmStatic
@@ -1011,7 +1193,7 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 			return QuadDiscriminatedUnion(Value4(value))
 		}
 
-		fun <T1, T2, T3> QuadDiscriminatedUnion<T1, T2, T3, out Throwable>.toResult(): Result<TriDiscriminatedUnion<T1, T2 ,T3>> {
+		fun <T1, T2, T3> QuadDiscriminatedUnion<T1, T2, T3, out Throwable>.toResult(): Result<TriDiscriminatedUnion<T1, T2, T3>> {
 			return map(
 				{ Result.success(TriDiscriminatedUnion.first(it)) },
 				{ Result.success(TriDiscriminatedUnion.second(it)) },
@@ -1021,7 +1203,7 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 		}
 
 		@JvmStatic
-		fun <T1 : Any, T2 : Any, T3: Any, T4 : Any> QuadDiscriminatedUnion<T1?, T2?, T3?, T4?>?.takeUnlessAllNull(): QuadDiscriminatedUnion<T1, T2, T3, T4>? {
+		fun <T1 : Any, T2 : Any, T3 : Any, T4 : Any> QuadDiscriminatedUnion<T1?, T2?, T3?, T4?>?.takeUnlessAllNull(): QuadDiscriminatedUnion<T1, T2, T3, T4>? {
 			@Suppress("UNCHECKED_CAST")
 			return takeUnless { it?.unionValue == null } as QuadDiscriminatedUnion<T1, T2, T3, T4>?
 		}
@@ -1036,105 +1218,71 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 			}
 		}
 
-		/*@JvmStatic
-		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
-			return when (value) {
-				is Value1<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
-				is Value2<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
-				is Value3<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
-			}
-		}
-
 		@JvmStatic
-		@JvmName("flattenFirstAndSecond")
-		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
-			@Suppress("UNCHECKED_CAST")
+		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
 			return when (value) {
-				is Value1<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3> -> value.value
-				is Value2<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3> -> value.value
-				is Value3<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
-			}
-		}
-
-		@JvmStatic
-		@JvmName("flattenFirstAndThird")
-		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
-			@Suppress("UNCHECKED_CAST")
-			return when (value) {
-				is Value1<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
-				is Value2<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
-				is Value3<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
-			}
-		}
-
-		@JvmStatic
-		@JvmName("flattenSecondAndThird")
-		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
-			@Suppress("UNCHECKED_CAST")
-			return when (value) {
-				is Value1<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
-				is Value2<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
-				is Value3<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
+				is Value1<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
+				is Value2<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
+				is Value3<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
+				is Value4<QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
 			}
 		}
 
 		@JvmStatic
 		@JvmName("flattenFirst")
-		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3, T4>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
 			@Suppress("UNCHECKED_CAST")
 			return when (value) {
-				is Value1<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3> -> value.value
-				is Value2<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
-				is Value3<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value1<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3, T4> -> value.value
+				is Value2<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value3<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value4<QuadDiscriminatedUnion<T1, T2, T3, T4>, T2, T3, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
 			}
 		}
 
 		@JvmStatic
 		@JvmName("flattenSecond")
-		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3, T4>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
 			@Suppress("UNCHECKED_CAST")
 			return when (value) {
-				is Value1<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
-				is Value2<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3> -> value.value
-				is Value3<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value1<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value2<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3, T4> -> value.value
+				is Value3<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value4<T1, QuadDiscriminatedUnion<T1, T2, T3, T4>, T3, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
 			}
 		}
 
 		@JvmStatic
 		@JvmName("flattenThird")
-		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>, T4>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
 			@Suppress("UNCHECKED_CAST")
 			return when (value) {
-				is Value1<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
-				is Value2<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
-				is Value3<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
+				is Value1<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value2<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value3<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>, T4> -> value.value
+				is Value4<T1, T2, QuadDiscriminatedUnion<T1, T2, T3, T4>, T4> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
 			}
 		}
 
 		@JvmStatic
-		fun <T1, T2> QuadDiscriminatedUnion<T1, T1, T2>.flattenFirstAndSecond(): DiscriminatedUnion<T1, T2> {
+		@JvmName("flattenFourth")
+		fun <T1, T2, T3, T4> QuadDiscriminatedUnion<T1, T2, T3, QuadDiscriminatedUnion<T1, T2, T3, T4>>.flatten(): QuadDiscriminatedUnion<T1, T2, T3, T4> {
+			@Suppress("UNCHECKED_CAST")
 			return when (value) {
-				is Value1<T1, T1, T2> -> DiscriminatedUnion.first(value.value)
-				is Value2<T1, T1, T2> -> DiscriminatedUnion.first(value.value)
-				is Value3<T1, T1, T2> -> DiscriminatedUnion.second(value.value)
+				is Value1<T1, T2, T3, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value2<T1, T2, T3, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value3<T1, T2, T3, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> this as QuadDiscriminatedUnion<T1, T2, T3, T4>
+				is Value4<T1, T2, T3, QuadDiscriminatedUnion<T1, T2, T3, T4>> -> value.value
 			}
 		}
 
 		@JvmStatic
-		fun <T1, T2> QuadDiscriminatedUnion<T1, T2, T1>.flattenFirstAndThird(): DiscriminatedUnion<T1, T2> {
+		fun <T1, T2> QuadDiscriminatedUnion<T1, T2, T1, T2>.flattenToDiscriminatedUnion(): DiscriminatedUnion<T1, T2> {
 			return when (value) {
-				is Value1<T1, T2, T1> -> DiscriminatedUnion.first(value.value)
-				is Value2<T1, T2, T1> -> DiscriminatedUnion.second(value.value)
-				is Value3<T1, T2, T1> -> DiscriminatedUnion.first(value.value)
-			}
-		}
-
-		@JvmStatic
-		fun <T1, T2> QuadDiscriminatedUnion<T1, T2, T2>.flattenSecondAndThird(): DiscriminatedUnion<T1, T2> {
-			return when (value) {
-				is Value1<T1, T2, T2> -> DiscriminatedUnion.first(value.value)
-				is Value2<T1, T2, T2> -> DiscriminatedUnion.second(value.value)
-				is Value3<T1, T2, T2> -> DiscriminatedUnion.second(value.value)
+				is Value1<T1, T2, T1, T2> -> DiscriminatedUnion.first(value.value)
+				is Value2<T1, T2, T1, T2> -> DiscriminatedUnion.second(value.value)
+				is Value3<T1, T2, T1, T2> -> DiscriminatedUnion.first(value.value)
+				is Value4<T1, T2, T1, T2> -> DiscriminatedUnion.second(value.value)
 			}
 		}
 
@@ -1144,6 +1292,7 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 				is Value1<T1, T2, T3, T4> -> it.value.value
 				is Value2<T1, T2, T3, T4> -> it.value.value
 				is Value3<T1, T2, T3, T4> -> it.value.value
+				is Value4<T1, T2, T3, T4> -> it.value.value
 			}
 		}
 
@@ -1153,27 +1302,11 @@ value class QuadDiscriminatedUnion<T1, T2, T3, T4> private constructor(
 				is Value1<T1, T2, T3, T4> -> it.value.value
 				is Value2<T1, T2, T3, T4> -> it.value.value
 				is Value3<T1, T2, T3, T4> -> it.value.value
+				is Value4<T1, T2, T3, T4> -> it.value.value
 			}
-		}*/
-
-		/*inline fun <T1 : Any, T2 : Any, T3 : Any, T4 : Any, T5> QuadDiscriminatedUnion<T1?, T2?, T3?, T4?>?.fifthTypeIfAllNull(
-			fifthValue: () -> T5,
-		): QuintDiscriminatedUnion<T1, T2, T3, T4, T5> {
-			return if (allNull) {
-				return QuintDiscriminatedUnion.fourth(fourthValue())
-			} else if (this!!.isFirstType) {
-				QuintDiscriminatedUnion.first(firstOrNull!!)
-			} else if (isSecondType) {
-				QuintDiscriminatedUnion.second(secondOrNull!!)
-			} else if (isThirdType) {
-				QuintDiscriminatedUnion.third(thirdOrNull!!)
-			} else {
-				QuintDiscriminatedUnion.fourth(fourthOrNull!!)
-			}
-		}*/
+		}
 
 		// TODO documentation
-		// TODO QuintDiscriminatedUnion extensions
 		// TODO add JSON support with Jackson JSON and kotlinx.serialization
 		// TODO JSON support serialization modes: serialize as first successful, last successful, and type with most non-null fields
 		// TODO OpenAPI support via springdoc-swaggerui
