@@ -535,6 +535,10 @@ value class DiscriminatedUnion<T1, T2> private constructor(
 			return DiscriminatedUnion(Value2(value))
 		}
 
+		fun <T> from(result: Result<T>): DiscriminatedUnion<T, Throwable> {
+			return result.map { first<T, Throwable>(it) }.getOrElse { second(it) }
+		}
+
 		fun <T> DiscriminatedUnion<T, out Throwable>.toResult(): Result<T> {
 			return map({ Result.success(it) }) { Result.failure(it) }
 		}

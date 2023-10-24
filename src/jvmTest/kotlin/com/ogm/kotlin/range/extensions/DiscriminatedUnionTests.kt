@@ -332,6 +332,24 @@ class DiscriminatedUnionTests {
 	}
 
 	@Test
+	fun fromResultTest() {
+		assertThat(DiscriminatedUnion.from(Result.success("lorem ipsum"))).satisfies {
+			assertThat(it.position).isEqualTo(1)
+			assertThat(it.isFirstType).isTrue()
+			assertThat(it.isSecondType).isFalse()
+			assertThat(it.firstOrNull).isEqualTo("lorem ipsum")
+			assertThat(it.secondOrNull).isNull()
+		}
+		assertThat(DiscriminatedUnion.from(Result.failure<String>(IllegalStateException("Mock error")))).satisfies {
+			assertThat(it.position).isEqualTo(2)
+			assertThat(it.isFirstType).isFalse()
+			assertThat(it.isSecondType).isTrue()
+			assertThat(it.firstOrNull).isNull()
+			assertThat(it.secondOrNull).isExactlyInstanceOf(IllegalStateException::class.java).hasMessage("Mock error")
+		}
+	}
+
+	@Test
 	fun toResultTest() {
 		assertThat(DiscriminatedUnion.first<String, IllegalStateException>("lorem ipsum").toResult())
 			.isEqualTo(Result.success("lorem ipsum"))
